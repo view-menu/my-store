@@ -1,785 +1,844 @@
-````html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>PDF Menu → HTML</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restaurant PDF → Mobile Menu</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
-:root{
-  --bg:#EEF1EE;
-  --ink:#17262B;
-  --mute:#5B6B6F;
-  --line:#CBD3CF;
-  --card:#FFFFFF;
-  --accent:#0E5A57;
-  --warn:#B3261E;
-  --good:#176B4D;
-}
+    * {
+        box-sizing: border-box;
+    }
 
-@media(prefers-color-scheme:dark){
-  :root{
-    --bg:#121B1E;
-    --ink:#E8EEEC;
-    --mute:#9AABAE;
-    --line:#2B3A3E;
-    --card:#1A2629;
-    --accent:#5ED0C6;
-    --warn:#FF8A80;
-    --good:#72D6A5;
-  }
-}
+    body {
+        margin: 0;
+        font-family: Inter, Arial, sans-serif;
+        background: #f4f5f7;
+        color: #1f2937;
+    }
 
-*{
-  box-sizing:border-box;
-}
+    .container {
+        max-width: 1050px;
+        margin: auto;
+        padding: 24px;
+    }
 
-html{
-  scroll-behavior:smooth;
-}
+    h1 {
+        margin: 0 0 6px;
+        font-size: 28px;
+    }
 
-body{
-  margin:0;
-  font-family:"Bricolage Grotesque",system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--ink);
-  line-height:1.5;
-}
+    .subtitle {
+        color: #6b7280;
+        margin-bottom: 25px;
+    }
 
-main{
-  max-width:1000px;
-  margin:0 auto;
-  padding:32px 20px 70px;
-}
+    .card {
+        background: white;
+        border-radius: 16px;
+        padding: 22px;
+        margin-bottom: 18px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.06);
+    }
 
-h1{
-  font-size:clamp(2rem,6vw,3.5rem);
-  line-height:1.02;
-  letter-spacing:-.04em;
-  font-weight:800;
-  margin:0 0 10px;
-}
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 7px;
+    }
 
-.lead{
-  color:var(--mute);
-  margin:0 0 28px;
-  max-width:65ch;
-}
+    input,
+    select,
+    textarea,
+    button {
+        font: inherit;
+    }
 
-.panel{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:20px;
-  margin-bottom:20px;
-}
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 11px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 9px;
+        background: white;
+    }
 
-label{
-  display:block;
-  font-weight:600;
-  margin-bottom:6px;
-}
+    textarea {
+        min-height: 450px;
+        resize: vertical;
+        font-family: Consolas, monospace;
+        font-size: 13px;
+    }
 
-input[type=password],
-input[type=text],
-select{
-  width:100%;
-  padding:11px 12px;
-  border:1px solid var(--line);
-  border-radius:8px;
-  background:var(--bg);
-  color:var(--ink);
-  font:inherit;
-}
+    .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
 
-.row{
-  display:grid;
-  grid-template-columns:2fr 1fr;
-  gap:14px;
-}
+    @media(max-width:700px) {
+        .row {
+            grid-template-columns: 1fr;
+        }
+    }
 
-@media(max-width:650px){
-  .row{
-    grid-template-columns:1fr;
-  }
-}
+    .dropzone {
+        border: 2px dashed #c7ccd4;
+        border-radius: 15px;
+        padding: 38px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: .2s;
+    }
 
-small{
-  color:var(--mute);
-}
+    .dropzone:hover,
+    .dropzone.drag {
+        border-color: #111827;
+        background: #f9fafb;
+    }
 
-#drop{
-  border:2px dashed var(--line);
-  border-radius:12px;
-  padding:42px 16px;
-  text-align:center;
-  cursor:pointer;
-  transition:.15s;
-}
+    .dropzone strong {
+        display: block;
+        font-size: 18px;
+        margin-bottom: 7px;
+    }
 
-#drop:hover,
-#drop:focus-visible,
-#drop.over{
-  border-color:var(--accent);
-  background:var(--bg);
-  outline:none;
-}
+    .file-name {
+        margin-top: 12px;
+        color: #374151;
+        font-size: 14px;
+    }
 
-#drop strong{
-  display:block;
-  font-size:1.15rem;
-  margin-bottom:4px;
-}
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+    }
 
-button{
-  font:inherit;
-  font-weight:600;
-  padding:11px 16px;
-  border-radius:8px;
-  border:1px solid var(--ink);
-  background:var(--ink);
-  color:var(--bg);
-  cursor:pointer;
-}
+    button {
+        border: 0;
+        border-radius: 9px;
+        padding: 11px 17px;
+        cursor: pointer;
+        background: #111827;
+        color: white;
+        font-weight: 600;
+    }
 
-button:hover{
-  opacity:.9;
-}
+    button.secondary {
+        background: #e5e7eb;
+        color: #111827;
+    }
 
-button.ghost{
-  background:transparent;
-  color:var(--ink);
-}
+    button.success {
+        background: #166534;
+    }
 
-button.green{
-  background:var(--good);
-  border-color:var(--good);
-  color:white;
-}
+    button:disabled {
+        opacity: .45;
+        cursor: not-allowed;
+    }
 
-button:disabled{
-  opacity:.5;
-  cursor:wait;
-}
+    .status {
+        padding: 13px;
+        border-radius: 9px;
+        margin-top: 15px;
+        display: none;
+        white-space: pre-wrap;
+    }
 
-button:focus-visible{
-  outline:3px solid var(--accent);
-  outline-offset:2px;
-}
+    .status.info {
+        display: block;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
 
-.actions{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin:14px 0;
-}
+    .status.success {
+        display: block;
+        background: #ecfdf5;
+        color: #047857;
+    }
 
-#status{
-  min-height:1.6em;
-  font-weight:600;
-  margin-top:10px;
-}
+    .status.error {
+        display: block;
+        background: #fef2f2;
+        color: #b91c1c;
+    }
 
-#status.err{
-  color:var(--warn);
-}
+    .small {
+        font-size: 12px;
+        color: #6b7280;
+        line-height: 1.5;
+    }
 
-#status.good{
-  color:var(--good);
-}
+    .check {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: 13px;
+    }
 
-.progress{
-  height:6px;
-  background:var(--line);
-  border-radius:999px;
-  overflow:hidden;
-  margin-top:12px;
-}
+    .check input {
+        width: auto;
+    }
 
-.progress div{
-  height:100%;
-  width:0%;
-  background:var(--accent);
-  transition:width .25s;
-}
+    .progress {
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 20px;
+        overflow: hidden;
+        margin-top: 14px;
+        display: none;
+    }
 
-iframe{
-  width:100%;
-  height:700px;
-  border:1px solid var(--line);
-  border-radius:12px;
-  background:white;
-}
+    .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: #111827;
+        transition: width .3s;
+    }
 
-textarea{
-  width:100%;
-  min-height:300px;
-  font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
-  background:var(--bg);
-  color:var(--ink);
-  border:1px solid var(--line);
-  border-radius:8px;
-  padding:12px;
-}
+    .model-note {
+        margin-top: 7px;
+        font-size: 12px;
+        color: #6b7280;
+    }
 
-.info{
-  padding:12px 14px;
-  border-radius:8px;
-  background:var(--bg);
-  color:var(--mute);
-  font-size:.9rem;
-  margin-top:12px;
-}
+    .preview {
+        width: 100%;
+        min-height: 600px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        background: white;
+    }
 
-.file-name{
-  font-weight:600;
-  color:var(--ink);
-}
-
-[hidden]{
-  display:none!important;
-}
+    .hidden {
+        display: none !important;
+    }
 </style>
 </head>
 
 <body>
 
-<main>
+<div class="container">
 
-<h1>
-  Upload a PDF menu.<br>
-  Get a menu that works on a phone.
-</h1>
+    <h1>Restaurant PDF → Mobile Menu</h1>
+    <div class="subtitle">
+        Convert a restaurant PDF menu into a mobile-friendly HTML menu.
+    </div>
 
-<p class="lead">
-  Upload a restaurant menu PDF and Gemini will extract the menu structure,
-  prices, descriptions, colors and optional food photos. The result is a
-  standalone mobile-friendly HTML menu.
-</p>
+    <!-- API SETTINGS -->
+    <div class="card">
 
-<!-- PROVIDER -->
+        <h2>Gemini Settings</h2>
 
-<section class="panel">
+        <div class="row">
 
-  <div style="margin-bottom:16px">
+            <div>
+                <label>Gemini API Key</label>
+                <input
+                    id="apiKey"
+                    type="password"
+                    placeholder="AIza..."
+                >
+                <div class="small" style="margin-top:6px">
+                    Your key is stored only in this browser's local storage.
+                </div>
+            </div>
 
-    <label for="prov">
-      AI Provider
-    </label>
+            <div>
+                <label>Primary Model</label>
+                <select id="model">
+                    <option value="gemini-3-flash-preview">
+                        Gemini 3 Flash Preview
+                    </option>
+                    <option value="gemini-2.5-flash">
+                        Gemini 2.5 Flash
+                    </option>
+                    <option value="gemini-2.5-flash-lite">
+                        Gemini 2.5 Flash Lite
+                    </option>
+                </select>
 
-    <select id="prov">
-      <option value="gemini">
-        Google Gemini
-      </option>
-      <option value="claude">
-        Anthropic Claude
-      </option>
-    </select>
+                <div class="model-note">
+                    Automatic fallback is enabled if the selected model is overloaded.
+                </div>
+            </div>
 
-  </div>
+        </div>
 
-  <div class="row">
-
-    <div>
-
-      <label for="key">
-        API key
-      </label>
-
-      <input
-        id="key"
-        type="password"
-        autocomplete="off"
-        placeholder="AIza..."
-      >
-
-      <small>
-        Saved only in this browser.
-      </small>
+        <div class="check">
+            <input type="checkbox" id="includePhotos" checked>
+            <label for="includePhotos" style="margin:0">
+                Extract food photos from the PDF
+            </label>
+        </div>
 
     </div>
 
-    <div>
 
-      <label for="model">
-        Model
-      </label>
+    <!-- PDF -->
+    <div class="card">
 
-      <input
-        id="model"
-        type="text"
-        value="gemini-3-flash-preview"
-      >
+        <h2>1. Upload PDF</h2>
 
-      <small>
-        Gemini 3 Flash Preview
-      </small>
+        <div
+            class="dropzone"
+            id="dropzone"
+        >
+            <strong>Drop restaurant PDF here</strong>
+            <span>or click to choose a file</span>
+            <div class="small">
+                Maximum PDF size: 50 MB
+            </div>
+
+            <input
+                id="pdfInput"
+                type="file"
+                accept="application/pdf"
+                hidden
+            >
+        </div>
+
+        <div
+            class="file-name"
+            id="fileName"
+        ></div>
+
+        <div class="actions">
+            <button
+                id="convertBtn"
+                disabled
+            >
+                Convert Menu
+            </button>
+        </div>
+
+        <div
+            class="progress"
+            id="progress"
+        >
+            <div
+                class="progress-bar"
+                id="progressBar"
+            ></div>
+        </div>
+
+        <div
+            id="status"
+            class="status"
+        ></div>
 
     </div>
 
-  </div>
 
-</section>
-
-
-<!-- PDF -->
-
-<section class="panel">
-
-  <div
-    id="drop"
-    tabindex="0"
-    role="button"
-    aria-label="Choose PDF menu"
-  >
-
-    <strong>
-      Drop your PDF menu here
-    </strong>
-
-    <small id="fname">
-      or click to choose a PDF
-    </small>
-
-  </div>
-
-  <input
-    id="file"
-    type="file"
-    accept="application/pdf"
-    hidden
-  >
-
-  <label style="font-weight:400;margin-top:16px">
-
-    <input
-      type="checkbox"
-      id="usePhotos"
-      checked
+    <!-- JSON -->
+    <div
+        class="card hidden"
+        id="editorCard"
     >
 
-    Include photos from the PDF
+        <h2>2. Extracted Menu Data</h2>
 
-  </label>
+        <div class="small" style="margin-bottom:10px">
+            You can edit the JSON before generating the final menu.
+        </div>
 
-  <div class="info">
-    Maximum PDF size: 50 MB.
-    Photos are extracted locally in your browser.
-  </div>
+        <textarea id="jsonEditor"></textarea>
 
-  <div class="actions">
+        <div class="actions">
 
-    <button id="go" disabled>
-      Convert to HTML
-    </button>
+            <button id="generateBtn">
+                Generate Menu
+            </button>
 
-  </div>
+            <button
+                id="previewBtn"
+                class="secondary"
+            >
+                Preview
+            </button>
 
-  <div id="status" role="status" aria-live="polite"></div>
-
-  <div class="progress">
-    <div id="progressBar"></div>
-  </div>
-
-</section>
-
-
-<!-- RESULT -->
-
-<section id="result" hidden>
-
-  <div class="panel">
-
-    <div class="actions">
-
-      <button id="dl">
-        Download menu.html
-      </button>
-
-      <button id="open" class="ghost">
-        Open in new tab
-      </button>
-
-      <button id="toggle" class="ghost">
-        Edit extracted data
-      </button>
+        </div>
 
     </div>
 
-  </div>
 
-  <div
-    id="editor"
-    class="panel"
-    hidden
-  >
+    <!-- OUTPUT -->
+    <div
+        class="card hidden"
+        id="outputCard"
+    >
 
-    <label for="json">
-      Extracted menu data
-    </label>
+        <h2>3. Finished Menu</h2>
 
-    <textarea
-      id="json"
-      spellcheck="false"
-    ></textarea>
+        <div class="actions">
 
-    <div class="actions">
+            <button
+                id="downloadBtn"
+                class="success"
+            >
+                Download menu.html
+            </button>
 
-      <button id="apply">
-        Apply changes
-      </button>
+            <button
+                id="openBtn"
+                class="secondary"
+            >
+                Open Preview
+            </button>
+
+        </div>
+
+        <iframe
+            id="preview"
+            class="preview"
+        ></iframe>
 
     </div>
 
-  </div>
-
-  <iframe
-    id="preview"
-    title="Menu preview"
-  ></iframe>
-
-</section>
-
-</main>
+</div>
 
 
 <script>
 
-/* ============================================================
-   CONFIGURATION
-============================================================ */
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
 
 const $ = id => document.getElementById(id);
 
-const DEFAULT_MODELS = {
-
-  gemini:
-    "gemini-3-flash-preview",
-
-  claude:
-    "claude-sonnet-5"
-
-};
-
-
-/* ============================================================
-   GLOBAL STATE
-============================================================ */
-
-let pdfFile = null;
-
-let data = null;
-
-let html = "";
-
-let pdfDoc = null;
-
-let imgs = {};
+const apiKeyInput = $("apiKey");
+const modelInput = $("model");
+const pdfInput = $("pdfInput");
+const dropzone = $("dropzone");
+const fileName = $("fileName");
+const convertBtn = $("convertBtn");
+const statusBox = $("status");
+const progress = $("progress");
+const progressBar = $("progressBar");
+const editorCard = $("editorCard");
+const outputCard = $("outputCard");
+const jsonEditor = $("jsonEditor");
+const previewFrame = $("preview");
 
 
-/* ============================================================
-   PROVIDER SETTINGS
-============================================================ */
-
-$("prov").value =
-  localStorage.getItem("menuProv") || "gemini";
+let selectedPDF = null;
+let extractedData = null;
+let generatedHTML = "";
+let generatedImageData = [];
 
 
-function loadProvider(){
+// ------------------------------------------------------------
+// LOCAL STORAGE
+// ------------------------------------------------------------
 
-  const provider = $("prov").value;
+apiKeyInput.value =
+    localStorage.getItem("restaurant_gemini_api_key") || "";
 
-  $("key").value =
-    localStorage.getItem(
-      "menuKey_" + provider
-    ) || "";
-
-  $("model").value =
-    localStorage.getItem(
-      "menuModel_" + provider
-    ) ||
-    DEFAULT_MODELS[provider];
-
-  $("key").placeholder =
-    provider === "gemini"
-      ? "AIza..."
-      : "sk-ant-...";
-
-}
-
-
-$("prov").addEventListener(
-  "change",
-  loadProvider
-);
-
-loadProvider();
-
-
-/* ============================================================
-   HELPERS
-============================================================ */
-
-function escapeHTML(value){
-
-  return String(value ?? "")
-    .replace(/[&<>"']/g, c => ({
-      "&":"&amp;",
-      "<":"&lt;",
-      ">":"&gt;",
-      '"':"&quot;",
-      "'":"&#39;"
-    }[c]));
-
-}
-
-
-function safeColor(value, fallback){
-
-  return /^#[0-9a-f]{3,8}$/i.test(value || "")
-    ? value
-    : fallback;
-
-}
-
-
-function say(message, error=false, good=false){
-
-  $("status").textContent = message;
-
-  $("status").className =
-    error
-      ? "err"
-      : good
-        ? "good"
-        : "";
-
-}
-
-
-function progress(percent){
-
-  $("progressBar").style.width =
-    Math.max(0, Math.min(100, percent)) + "%";
-
-}
-
-
-/* ============================================================
-   FILE PICKER
-============================================================ */
-
-const drop = $("drop");
-
-
-drop.onclick = () =>
-  $("file").click();
-
-
-drop.onkeydown = event => {
-
-  if(
-    event.key === "Enter" ||
-    event.key === " "
-  ){
-
-    event.preventDefault();
-
-    $("file").click();
-
-  }
-
-};
-
-
-["dragenter","dragover"].forEach(
-  eventName => {
-
-    drop.addEventListener(
-      eventName,
-      event => {
-
-        event.preventDefault();
-
-        drop.classList.add("over");
-
-      }
+apiKeyInput.addEventListener("input", () => {
+    localStorage.setItem(
+        "restaurant_gemini_api_key",
+        apiKeyInput.value.trim()
     );
-
-  }
-);
+});
 
 
-["dragleave","drop"].forEach(
-  eventName => {
+// ------------------------------------------------------------
+// UI HELPERS
+// ------------------------------------------------------------
 
-    drop.addEventListener(
-      eventName,
-      event => {
+function setStatus(message, type = "info") {
 
-        event.preventDefault();
+    statusBox.textContent = message;
+    statusBox.className = "status " + type;
 
-        drop.classList.remove("over");
+}
 
-      }
-    );
+function setProgress(percent) {
 
-  }
-);
-
-
-drop.addEventListener(
-  "drop",
-  event => {
-
-    pick(
-      event.dataTransfer.files[0]
-    );
-
-  }
-);
-
-
-$("file").addEventListener(
-  "change",
-  event => {
-
-    pick(event.target.files[0]);
-
-  }
-);
-
-
-function pick(file){
-
-  if(!file)
-    return;
-
-  if(
-    file.type !==
-    "application/pdf"
-  ){
-
-    say(
-      "Please choose a PDF file.",
-      true
-    );
-
-    return;
-
-  }
-
-
-  if(
-    file.size >
-    50 * 1024 * 1024
-  ){
-
-    say(
-      "PDF is larger than 50 MB.",
-      true
-    );
-
-    return;
-
-  }
-
-
-  pdfFile = file;
-
-  $("fname").innerHTML =
-    `<span class="file-name">${escapeHTML(file.name)}</span>
-     · ${(file.size / 1024 / 1024).toFixed(1)} MB`;
-
-  $("go").disabled = false;
-
-  say(
-    "PDF ready. Click Convert to HTML."
-  );
+    progress.style.display = "block";
+    progressBar.style.width = percent + "%";
 
 }
 
 
-/* ============================================================
-   BASE64
-============================================================ */
+// ------------------------------------------------------------
+// FILE PICKER
+// ------------------------------------------------------------
 
-function fileToBase64(file){
+dropzone.addEventListener("click", () => {
+    pdfInput.click();
+});
 
-  return new Promise(
-    (resolve,reject) => {
 
-      const reader =
-        new FileReader();
+pdfInput.addEventListener("change", e => {
 
-      reader.onload = () => {
+    const file = e.target.files[0];
 
-        const result =
-          reader.result;
+    if (file) {
+        selectPDF(file);
+    }
 
-        resolve(
-          result.split(",")[1]
+});
+
+
+dropzone.addEventListener("dragover", e => {
+
+    e.preventDefault();
+    dropzone.classList.add("drag");
+
+});
+
+
+dropzone.addEventListener("dragleave", () => {
+
+    dropzone.classList.remove("drag");
+
+});
+
+
+dropzone.addEventListener("drop", e => {
+
+    e.preventDefault();
+
+    dropzone.classList.remove("drag");
+
+    const file = e.dataTransfer.files[0];
+
+    if (file) {
+        selectPDF(file);
+    }
+
+});
+
+
+function selectPDF(file) {
+
+    if (file.type !== "application/pdf") {
+
+        setStatus(
+            "Please select a PDF file.",
+            "error"
         );
 
-      };
+        return;
+    }
 
-      reader.onerror = () =>
-        reject(
-          new Error(
-            "Could not read the PDF."
-          )
+
+    if (file.size > 50 * 1024 * 1024) {
+
+        setStatus(
+            "PDF is larger than 50 MB. Please use a smaller file.",
+            "error"
         );
 
-      reader.readAsDataURL(file);
+        return;
+    }
+
+
+    selectedPDF = file;
+
+    fileName.textContent =
+        `${file.name} — ${formatBytes(file.size)}`;
+
+    convertBtn.disabled = false;
+
+    setStatus(
+        "PDF ready.",
+        "success"
+    );
+
+}
+
+
+function formatBytes(bytes) {
+
+    if (!bytes) return "0 B";
+
+    const units = ["B", "KB", "MB", "GB"];
+
+    const i =
+        Math.floor(
+            Math.log(bytes) / Math.log(1024)
+        );
+
+    return (
+        (bytes / Math.pow(1024, i))
+        .toFixed(1)
+        + " "
+        + units[i]
+    );
+
+}
+
+
+// ------------------------------------------------------------
+// GEMINI MODEL FALLBACK
+// ------------------------------------------------------------
+
+function getModelSequence() {
+
+    const primary = modelInput.value;
+
+    const models = [
+        primary,
+        "gemini-3-flash-preview",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite"
+    ];
+
+    return [...new Set(models)];
+
+}
+
+
+// ------------------------------------------------------------
+// HTTP REQUEST
+// ------------------------------------------------------------
+
+async function fetchWithTimeout(
+    url,
+    options,
+    timeout = 120000
+) {
+
+    const controller =
+        new AbortController();
+
+    const timer =
+        setTimeout(
+            () => controller.abort(),
+            timeout
+        );
+
+    try {
+
+        return await fetch(
+            url,
+            {
+                ...options,
+                signal: controller.signal
+            }
+        );
+
+    } finally {
+
+        clearTimeout(timer);
 
     }
-  );
 
 }
 
 
-/* ============================================================
-   GEMINI PROMPT
-============================================================ */
+// ------------------------------------------------------------
+// GEMINI FILE UPLOAD
+// ------------------------------------------------------------
 
-const BASE_PROMPT = `
+async function uploadPDFToGemini(file, apiKey) {
 
-Read this restaurant menu PDF carefully.
+    setStatus(
+        "Uploading PDF to Gemini Files API...",
+        "info"
+    );
+
+    setProgress(15);
+
+
+    const startURL =
+        "https://generativelanguage.googleapis.com/upload/v1beta/files";
+
+
+    /*
+        Step 1:
+        Ask Gemini for a resumable upload URL.
+    */
+
+    const startResponse =
+        await fetchWithTimeout(
+            startURL,
+            {
+                method: "POST",
+
+                headers: {
+                    "x-goog-api-key": apiKey,
+
+                    "X-Goog-Upload-Protocol":
+                        "resumable",
+
+                    "X-Goog-Upload-Command":
+                        "start",
+
+                    "X-Goog-Upload-Header-Content-Length":
+                        String(file.size),
+
+                    "X-Goog-Upload-Header-Content-Type":
+                        "application/pdf",
+
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+                    file: {
+                        display_name: file.name
+                    }
+                })
+            },
+            60000
+        );
+
+
+    if (!startResponse.ok) {
+
+        const text =
+            await startResponse.text();
+
+        throw new Error(
+            "Gemini upload initialization failed (" +
+            startResponse.status +
+            "): " +
+            text
+        );
+
+    }
+
+
+    /*
+        Google returns the upload URL in
+        X-Goog-Upload-URL.
+    */
+
+    let uploadURL =
+        startResponse.headers.get(
+            "X-Goog-Upload-URL"
+        );
+
+
+    if (!uploadURL) {
+
+        uploadURL =
+            startResponse.headers.get(
+                "x-goog-upload-url"
+            );
+
+    }
+
+
+    if (!uploadURL) {
+
+        throw new Error(
+            "Gemini did not return an upload URL."
+        );
+
+    }
+
+
+    setProgress(30);
+
+
+    /*
+        Step 2:
+        Upload the actual PDF bytes.
+    */
+
+    const uploadResponse =
+        await fetchWithTimeout(
+            uploadURL,
+            {
+                method: "POST",
+
+                headers: {
+
+                    "Content-Length":
+                        String(file.size),
+
+                    "X-Goog-Upload-Offset":
+                        "0",
+
+                    "X-Goog-Upload-Command":
+                        "upload, finalize"
+                },
+
+                body: file
+            },
+            180000
+        );
+
+
+    if (!uploadResponse.ok) {
+
+        const text =
+            await uploadResponse.text();
+
+        throw new Error(
+            "PDF upload failed (" +
+            uploadResponse.status +
+            "): " +
+            text
+        );
+
+    }
+
+
+    const result =
+        await uploadResponse.json();
+
+
+    if (!result.file) {
+
+        throw new Error(
+            "Gemini upload succeeded but returned no file information."
+        );
+
+    }
+
+
+    setProgress(45);
+
+    return result.file;
+
+}
+
+
+// ------------------------------------------------------------
+// PROMPT
+// ------------------------------------------------------------
+
+function buildPrompt() {
+
+    return `
+You are converting a restaurant PDF menu into structured data.
+
+Read the ENTIRE PDF carefully.
 
 Return ONLY valid JSON.
 
 Do not use markdown.
-
-Do not add commentary.
+Do not use code fences.
+Do not add explanations.
 
 Use this exact structure:
 
 {
-  "name": "restaurant name",
-  "tagline": "short subtitle or empty string",
-  "currency": "currency exactly as printed",
-  "colors": {
-    "bg": "#hex",
-    "ink": "#hex",
-    "accent": "#hex"
-  },
+  "restaurantName": "",
+  "tagline": "",
+  "currency": "",
+  "primaryColor": "#111111",
+  "secondaryColor": "#ffffff",
   "categories": [
     {
-      "name": "category name",
-      "note": "category note or empty string",
+      "name": "",
       "items": [
         {
-          "name": "item name",
-          "description": "description",
-          "price": "price exactly as printed",
-          "tags": []
+          "name": "",
+          "description": "",
+          "price": "",
+          "photo": null
         }
       ]
     }
@@ -788,1590 +847,1491 @@ Use this exact structure:
 
 IMPORTANT:
 
-1. Preserve the original language.
-2. Preserve item names.
-3. Preserve descriptions.
-4. Preserve prices exactly.
-5. Do not invent menu items.
-6. Do not invent prices.
-7. Keep items in reading order.
-8. Keep every visible menu item.
-9. If information is missing, use an empty string.
-10. Detect the restaurant's visual colors from the PDF.
-11. Make sure text color is readable against the background.
-12. Include all menu categories.
-13. Include drinks, desserts, sides and extras.
-14. Do not summarize the menu.
+1. Extract every menu category.
+2. Extract every menu item.
+3. Preserve item names accurately.
+4. Preserve descriptions when present.
+5. Preserve prices exactly as shown.
+6. Identify the currency.
+7. Do not invent prices.
+8. If a price is missing, use "".
+9. Keep the original menu ordering.
+10. Ignore advertisements and unrelated text.
+11. Do not combine separate menu items.
+12. Do not omit items.
 
-`;
+PHOTO EXTRACTION:
 
+If a menu item has a visible food/product photograph in the PDF,
+identify the photograph's page and approximate bounding box.
 
-const PHOTO_PROMPT = `
-
-For each menu item also add:
-
-"photo": null
-
-OR:
+Use:
 
 "photo": {
   "page": 1,
-  "box": [ymin,xmin,ymax,xmax]
+  "x": 0.10,
+  "y": 0.20,
+  "width": 0.35,
+  "height": 0.25
 }
 
-The page number must be 1-based.
+Coordinates MUST be normalized from 0 to 1.
 
-The box coordinates must be normalized from 0 to 1000.
+x = distance from left edge
+y = distance from top edge
+width = box width
+height = box height
 
-0,0 is the top-left of the PDF page.
+Page numbers start at 1.
 
-Only assign a photo when a clearly identifiable photo belongs to that specific menu item.
+If there is no suitable photo:
 
-Do NOT assign decorative images to unrelated items.
+"photo": null
 
-The box must cover the food photo only, not the item's text.
+Only associate a photo with an item when the visual relationship is reasonably clear.
 
+COLORS:
+
+Choose a primaryColor and secondaryColor based on the visual branding of the menu.
+Use valid hex colors.
+
+Return JSON only.
 `;
 
-
-/* ============================================================
-   GEMINI REQUEST
-============================================================ */
-
-async function callGemini(
-  apiKey,
-  model,
-  base64,
-  prompt
-){
-
-  const url =
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    + encodeURIComponent(model)
-    + ":generateContent";
+}
 
 
-  const response =
-    await fetch(
-      url,
-      {
-        method:"POST",
+// ------------------------------------------------------------
+// GENERATE CONTENT
+// ------------------------------------------------------------
 
-        headers:{
-          "Content-Type":
-            "application/json",
+async function generateFromGemini(
+    fileURI,
+    fileMimeType,
+    model,
+    apiKey
+) {
 
-          "x-goog-api-key":
-            apiKey
-        },
+    const url =
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
-        body:JSON.stringify({
 
-          contents:[
+    const body = {
+
+        contents: [
+
             {
-              parts:[
-                {
-                  inline_data:{
-                    mime_type:
-                      "application/pdf",
+                parts: [
 
-                    data:base64
-                  }
+                    {
+                        text: buildPrompt()
+                    },
+
+                    {
+                        file_data: {
+                            mime_type: fileMimeType,
+                            file_uri: fileURI
+                        }
+                    }
+
+                ]
+            }
+
+        ],
+
+        generationConfig: {
+
+            responseMimeType:
+                "application/json",
+
+            temperature:
+                0.1
+
+        }
+
+    };
+
+
+    const response =
+        await fetchWithTimeout(
+            url,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json",
+
+                    "x-goog-api-key":
+                        apiKey
                 },
 
-                {
-                  text:prompt
-                }
-              ]
-            }
-          ],
-
-          generationConfig:{
-            responseMimeType:
-              "application/json",
-
-            temperature:0
-          }
-
-        })
-
-      }
-    );
+                body:
+                    JSON.stringify(body)
+            },
+            180000
+        );
 
 
-  const output =
-    await response.json();
+    const text =
+        await response.text();
 
 
-  if(!response.ok){
+    if (!response.ok) {
 
-    const error =
-      new Error(
-        output?.error?.message ||
-        `Gemini request failed (${response.status})`
-      );
+        let detail = text;
 
-    error.status =
-      response.status;
+        try {
 
-    throw error;
+            const error =
+                JSON.parse(text);
 
-  }
+            detail =
+                error.error?.message ||
+                text;
 
+        } catch {}
 
-  const text =
-    (
-      output.candidates?.[0]
-        ?.content?.parts || []
-    )
-    .map(
-      part => part.text || ""
-    )
-    .join("");
+        const error =
+            new Error(
+                `HTTP ${response.status}: ${detail}`
+            );
 
-
-  if(!text){
-
-    throw new Error(
-      "Gemini returned an empty response."
-    );
-
-  }
-
-
-  return text;
-
-}
-
-
-/* ============================================================
-   RETRY LOGIC
-============================================================ */
-
-function shouldRetry(error){
-
-  const status =
-    Number(error.status);
-
-  if(
-    status === 429 ||
-    status === 500 ||
-    status === 502 ||
-    status === 503 ||
-    status === 504
-  ){
-
-    return true;
-
-  }
-
-
-  const message =
-    String(error.message || "")
-      .toLowerCase();
-
-
-  return(
-    message.includes("high demand") ||
-    message.includes("overloaded") ||
-    message.includes("temporarily unavailable") ||
-    message.includes("try again later")
-  );
-
-}
-
-
-function wait(ms){
-
-  return new Promise(
-    resolve =>
-      setTimeout(resolve,ms)
-  );
-
-}
-
-
-async function callGeminiWithRetry(
-  apiKey,
-  model,
-  base64,
-  prompt
-){
-
-  const maxAttempts = 4;
-
-  for(
-    let attempt = 1;
-    attempt <= maxAttempts;
-    attempt++
-  ){
-
-    try{
-
-      say(
-        attempt === 1
-          ? "Sending PDF to Gemini…"
-          : `Gemini is busy. Retrying (${attempt}/${maxAttempts})…`
-      );
-
-      return await callGemini(
-        apiKey,
-        model,
-        base64,
-        prompt
-      );
-
-    }
-    catch(error){
-
-      if(
-        !shouldRetry(error) ||
-        attempt === maxAttempts
-      ){
+        error.status =
+            response.status;
 
         throw error;
 
-      }
-
-
-      const delay =
-        Math.min(
-          15000,
-          2000 * Math.pow(2, attempt - 1)
-        );
-
-      await wait(delay);
-
-    }
-
-  }
-
-}
-
-
-/* ============================================================
-   PARSE JSON
-============================================================ */
-
-function parseModelJSON(text){
-
-  let clean =
-    String(text)
-      .replace(/^```json\s*/i,"")
-      .replace(/^```\s*/i,"")
-      .replace(/\s*```$/,"")
-      .trim();
-
-
-  const first =
-    clean.indexOf("{");
-
-  const last =
-    clean.lastIndexOf("}");
-
-
-  if(
-    first === -1 ||
-    last === -1 ||
-    last <= first
-  ){
-
-    throw new Error(
-      "Gemini did not return valid JSON."
-    );
-
-  }
-
-
-  clean =
-    clean.slice(
-      first,
-      last + 1
-    );
-
-
-  let result;
-
-  try{
-
-    result =
-      JSON.parse(clean);
-
-  }
-  catch(error){
-
-    throw new Error(
-      "Gemini returned malformed JSON."
-    );
-
-  }
-
-
-  if(
-    !result ||
-    !Array.isArray(result.categories)
-  ){
-
-    throw new Error(
-      "Gemini returned an unexpected menu structure."
-    );
-
-  }
-
-
-  return result;
-
-}
-
-
-/* ============================================================
-   CONVERT
-============================================================ */
-
-$("go").onclick =
-  async function(){
-
-    if(!pdfFile){
-
-      say(
-        "Choose a PDF first.",
-        true
-      );
-
-      return;
-
     }
 
 
-    const provider =
-      $("prov").value;
+    let data;
 
-    const apiKey =
-      $("key").value.trim();
+    try {
 
-    const model =
-      $("model").value.trim();
+        data =
+            JSON.parse(text);
 
-
-    if(!apiKey){
-
-      say(
-        "Enter your API key first.",
-        true
-      );
-
-      return;
-
-    }
-
-
-    localStorage.setItem(
-      "menuProv",
-      provider
-    );
-
-    localStorage.setItem(
-      "menuKey_" + provider,
-      apiKey
-    );
-
-    localStorage.setItem(
-      "menuModel_" + provider,
-      model
-    );
-
-
-    $("go").disabled = true;
-
-    $("result").hidden = true;
-
-    progress(5);
-
-
-    try{
-
-      /*
-       * Currently this converter is optimized
-       * for Gemini.
-       */
-
-      if(provider !== "gemini"){
+    } catch {
 
         throw new Error(
-          "This working version uses Gemini. Select Google Gemini as the provider."
+            "Gemini returned invalid JSON."
         );
-
-      }
-
-
-      if(
-        model !==
-        "gemini-3-flash-preview"
-      ){
-
-        say(
-          `Using model: ${model}`
-        );
-
-      }
-
-
-      progress(10);
-
-
-      const base64 =
-        await fileToBase64(
-          pdfFile
-        );
-
-
-      progress(20);
-
-
-      const prompt =
-        BASE_PROMPT +
-        (
-          $("usePhotos").checked
-            ? PHOTO_PROMPT
-            : ""
-        );
-
-
-      const text =
-        await callGeminiWithRetry(
-          apiKey,
-          model,
-          base64,
-          prompt
-        );
-
-
-      progress(65);
-
-
-      data =
-        parseModelJSON(text);
-
-
-      /*
-       * Normalize data so the
-       * HTML generator never crashes.
-       */
-
-      normalizeData();
-
-
-      progress(70);
-
-
-      pdfDoc = null;
-
-      imgs = {};
-
-
-      let photoCount = 0;
-
-
-      if(
-        $("usePhotos").checked
-      ){
-
-        say(
-          "Extracting photos from the PDF…"
-        );
-
-        photoCount =
-          await cropAll();
-
-      }
-
-
-      progress(90);
-
-
-      show();
-
-
-      progress(100);
-
-
-      say(
-        "Done. "
-        +
-        photoCount
-        +
-        " photo(s) extracted. Review the menu before publishing.",
-        false,
-        true
-      );
-
-
-    }
-    catch(error){
-
-      console.error(error);
-
-
-      let message =
-        error.message ||
-        "Unknown error";
-
-
-      if(
-        /401|403/.test(
-          String(error.status || "")
-        )
-      ){
-
-        message =
-          "Gemini rejected the API key. Check that your Gemini API key is correct and that the Gemini API is enabled.";
-
-      }
-      else if(
-        Number(error.status) === 429
-      ){
-
-        message =
-          "Gemini rate limit or temporary overload. Please wait a little and try again.";
-
-      }
-      else if(
-        Number(error.status) === 400
-      ){
-
-        message =
-          "Gemini rejected the request. Check the PDF and selected model.";
-
-      }
-
-
-      say(
-        "Conversion failed: " +
-        message,
-        true
-      );
-
-      progress(0);
-
-    }
-    finally{
-
-      $("go").disabled = false;
 
     }
 
-  };
+
+    const resultText =
+        data?.candidates?.[0]?.content?.parts
+            ?.map(p => p.text || "")
+            .join("")
+            .trim();
 
 
-/* ============================================================
-   NORMALIZE DATA
-============================================================ */
+    if (!resultText) {
 
-function normalizeData(){
+        throw new Error(
+            "Gemini returned an empty response."
+        );
 
-  if(!data.colors)
-    data.colors = {};
-
-
-  if(!Array.isArray(data.categories))
-    data.categories = [];
+    }
 
 
-  data.categories =
-    data.categories.map(
-      category => {
+    return cleanJSON(resultText);
 
-        category =
-          category || {};
+}
 
 
-        category.name =
-          category.name || "";
+// ------------------------------------------------------------
+// JSON CLEANING
+// ------------------------------------------------------------
+
+function cleanJSON(text) {
+
+    let value = text.trim();
 
 
-        category.note =
-          category.note || "";
+    /*
+        Remove accidental markdown fences.
+    */
+
+    value =
+        value
+            .replace(/^```json\s*/i, "")
+            .replace(/^```\s*/i, "")
+            .replace(/\s*```$/i, "")
+            .trim();
 
 
-        if(!Array.isArray(category.items))
-          category.items = [];
+    /*
+        Sometimes Gemini adds text before/after JSON.
+    */
+
+    const first =
+        value.indexOf("{");
+
+    const last =
+        value.lastIndexOf("}");
 
 
-        category.items =
-          category.items.map(
-            item => {
+    if (
+        first !== -1 &&
+        last !== -1 &&
+        last > first
+    ) {
 
-              item =
-                item || {};
+        value =
+            value.substring(
+                first,
+                last + 1
+            );
 
-
-              item.name =
-                item.name || "";
-
-
-              item.description =
-                item.description || "";
-
-
-              item.price =
-                item.price || "";
+    }
 
 
-              item.tags =
-                Array.isArray(item.tags)
-                  ? item.tags
-                  : [];
+    let parsed;
+
+    try {
+
+        parsed =
+            JSON.parse(value);
+
+    } catch (e) {
+
+        throw new Error(
+            "Gemini returned malformed JSON:\n\n" +
+            value.substring(0, 1000)
+        );
+
+    }
 
 
-              if(
-                !("photo" in item)
-              ){
+    normalizeMenu(parsed);
 
-                item.photo =
-                  null;
+    return parsed;
 
-              }
+}
 
 
-              return item;
+// ------------------------------------------------------------
+// NORMALIZE DATA
+// ------------------------------------------------------------
 
-            }
-          );
+function normalizeMenu(menu) {
+
+    if (!menu || typeof menu !== "object") {
+
+        throw new Error(
+            "Invalid menu structure returned by Gemini."
+        );
+
+    }
 
 
-        return category;
+    menu.restaurantName =
+        String(
+            menu.restaurantName || "Restaurant Menu"
+        );
 
-      }
+    menu.tagline =
+        String(
+            menu.tagline || ""
+        );
+
+    menu.currency =
+        String(
+            menu.currency || ""
+        );
+
+    menu.primaryColor =
+        validColor(menu.primaryColor)
+            ? menu.primaryColor
+            : "#111111";
+
+    menu.secondaryColor =
+        validColor(menu.secondaryColor)
+            ? menu.secondaryColor
+            : "#ffffff";
+
+
+    if (!Array.isArray(menu.categories)) {
+
+        menu.categories = [];
+
+    }
+
+
+    menu.categories =
+        menu.categories.map(category => {
+
+            category =
+                category || {};
+
+            return {
+
+                name:
+                    String(
+                        category.name || "Menu"
+                    ),
+
+                items:
+                    Array.isArray(category.items)
+                        ? category.items.map(item => {
+
+                            item =
+                                item || {};
+
+                            return {
+
+                                name:
+                                    String(
+                                        item.name || ""
+                                    ),
+
+                                description:
+                                    String(
+                                        item.description || ""
+                                    ),
+
+                                price:
+                                    String(
+                                        item.price || ""
+                                    ),
+
+                                photo:
+                                    normalizePhoto(
+                                        item.photo
+                                    )
+
+                            };
+
+                        })
+                        : []
+
+            };
+
+        });
+
+}
+
+
+function validColor(value) {
+
+    return (
+        typeof value === "string" &&
+        /^#[0-9a-f]{6}$/i.test(value)
     );
 
 }
 
 
-/* ============================================================
-   PDF PHOTO EXTRACTION
-============================================================ */
+function normalizePhoto(photo) {
 
-async function cropAll(){
+    if (!photo || typeof photo !== "object") {
 
-  imgs = {};
+        return null;
 
-
-  const jobs = [];
+    }
 
 
-  (
-    data.categories || []
-  ).forEach(
-    (category, categoryIndex) => {
+    const page =
+        Number(photo.page);
 
-      (
-        category.items || []
-      ).forEach(
-        (item,itemIndex) => {
+    const x =
+        Number(photo.x);
 
-          const photo =
-            item.photo;
+    const y =
+        Number(photo.y);
+
+    const width =
+        Number(photo.width);
+
+    const height =
+        Number(photo.height);
 
 
-          if(
-            photo &&
-            Number.isInteger(
-              Number(photo.page)
-            ) &&
-            Array.isArray(photo.box) &&
-            photo.box.length === 4
-          ){
+    if (
+        !Number.isFinite(page) ||
+        !Number.isFinite(x) ||
+        !Number.isFinite(y) ||
+        !Number.isFinite(width) ||
+        !Number.isFinite(height)
+    ) {
 
-            jobs.push([
-              categoryIndex,
-              itemIndex,
-              photo
-            ]);
+        return null;
 
-          }
+    }
+
+
+    return {
+
+        page:
+            Math.max(
+                1,
+                Math.round(page)
+            ),
+
+        x:
+            clamp(x),
+
+        y:
+            clamp(y),
+
+        width:
+            clamp(width),
+
+        height:
+            clamp(height)
+
+    };
+
+}
+
+
+function clamp(value) {
+
+    return Math.max(
+        0,
+        Math.min(
+            1,
+            value
+        )
+    );
+
+}
+
+
+// ------------------------------------------------------------
+// RETRY LOGIC
+// ------------------------------------------------------------
+
+function isRetryableError(error) {
+
+    const status =
+        error?.status;
+
+
+    if (
+        status === 408 ||
+        status === 409 ||
+        status === 429 ||
+        status === 500 ||
+        status === 502 ||
+        status === 503 ||
+        status === 504
+    ) {
+
+        return true;
+
+    }
+
+
+    const message =
+        String(
+            error?.message || ""
+        ).toLowerCase();
+
+
+    return (
+        message.includes("high demand") ||
+        message.includes("overloaded") ||
+        message.includes("temporarily unavailable") ||
+        message.includes("rate limit")
+    );
+
+}
+
+
+function sleep(ms) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                ms
+            )
+    );
+
+}
+
+
+async function generateWithFallback(
+    file,
+    apiKey
+) {
+
+    const models =
+        getModelSequence();
+
+
+    let lastError = null;
+
+
+    for (
+        let i = 0;
+        i < models.length;
+        i++
+    ) {
+
+        const model =
+            models[i];
+
+
+        setStatus(
+            `Reading PDF with ${model}...`,
+            "info"
+        );
+
+
+        for (
+            let attempt = 1;
+            attempt <= 3;
+            attempt++
+        ) {
+
+            try {
+
+                return await generateFromGemini(
+                    file.uri,
+                    file.mimeType || "application/pdf",
+                    model,
+                    apiKey
+                );
+
+            } catch (error) {
+
+                lastError =
+                    error;
+
+
+                if (
+                    !isRetryableError(error) ||
+                    attempt === 3
+                ) {
+
+                    break;
+
+                }
+
+
+                const wait =
+                    Math.min(
+                        15000,
+                        2000 *
+                        Math.pow(
+                            2,
+                            attempt - 1
+                        )
+                    );
+
+
+                setStatus(
+                    `${model} is temporarily busy.\n` +
+                    `Retry ${attempt}/3 in ${Math.round(wait / 1000)} seconds...`,
+                    "info"
+                );
+
+
+                await sleep(wait);
+
+            }
 
         }
-      );
-
-    }
-  );
 
 
-  if(!jobs.length)
-    return 0;
+        /*
+            If one model fails because of temporary
+            demand/quota, move to the next model.
+        */
 
+        if (i < models.length - 1) {
 
-  try{
+            setStatus(
+                `${model} was unavailable.\n` +
+                `Trying fallback model: ${models[i + 1]}`,
+                "info"
+            );
 
-    if(!pdfDoc){
+            await sleep(1000);
 
-      pdfjsLib
-        .GlobalWorkerOptions
-        .workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-
-      pdfDoc =
-        await pdfjsLib
-          .getDocument({
-            data:
-              await pdfFile.arrayBuffer()
-          })
-          .promise;
+        }
 
     }
 
 
-    const pages = {};
+    throw new Error(
+        "All Gemini models failed.\n\n" +
+        (lastError?.message || "Unknown Gemini error.")
+    );
+
+}
 
 
-    const clamp =
-      value =>
-        Math.max(
-          0,
-          Math.min(
-            1000,
-            Number(value) || 0
-          )
-        );
+// ------------------------------------------------------------
+// MAIN CONVERSION
+// ------------------------------------------------------------
+
+convertBtn.addEventListener(
+    "click",
+    async () => {
+
+        if (!selectedPDF) {
+
+            setStatus(
+                "Please choose a PDF first.",
+                "error"
+            );
+
+            return;
+
+        }
 
 
-    let completed = 0;
+        const apiKey =
+            apiKeyInput.value.trim();
 
 
-    for(
-      const [ci,ii,p]
-      of jobs
-    ){
+        if (!apiKey) {
 
-      const pageNumber =
-        Number(p.page);
+            setStatus(
+                "Please enter your Gemini API key.",
+                "error"
+            );
 
+            apiKeyInput.focus();
 
-      if(
-        pageNumber < 1 ||
-        pageNumber > pdfDoc.numPages
-      ){
+            return;
 
-        continue;
-
-      }
+        }
 
 
-      if(!pages[pageNumber]){
+        convertBtn.disabled = true;
 
-        const page =
-          await pdfDoc.getPage(
-            pageNumber
-          );
+        editorCard.classList.add("hidden");
+        outputCard.classList.add("hidden");
 
-
-        const baseViewport =
-          page.getViewport({
-            scale:1
-          });
+        setProgress(5);
 
 
-        const scale =
-          Math.min(
-            3,
-            2000 /
-            baseViewport.width
-          );
+        try {
+
+            /*
+                Upload the PDF using Files API.
+            */
+
+            const uploadedFile =
+                await uploadPDFToGemini(
+                    selectedPDF,
+                    apiKey
+                );
 
 
-        const viewport =
-          page.getViewport({
-            scale
-          });
+            if (!uploadedFile.uri) {
+
+                throw new Error(
+                    "Gemini did not return a file URI."
+                );
+
+            }
 
 
-        const canvas =
-          document.createElement(
-            "canvas"
-          );
+            setProgress(50);
 
 
-        canvas.width =
-          Math.round(
-            viewport.width
-          );
+            /*
+                Ask Gemini to extract the menu.
+            */
 
-        canvas.height =
-          Math.round(
-            viewport.height
-          );
-
-
-        const context =
-          canvas.getContext(
-            "2d"
-          );
+            extractedData =
+                await generateWithFallback(
+                    uploadedFile,
+                    apiKey
+                );
 
 
-        context.fillStyle =
-          "#FFFFFF";
+            setProgress(75);
 
 
-        context.fillRect(
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        );
+            /*
+                Display JSON for editing.
+            */
+
+            jsonEditor.value =
+                JSON.stringify(
+                    extractedData,
+                    null,
+                    2
+                );
 
 
-        await page.render({
-          canvasContext:context,
-          viewport
+            editorCard.classList.remove(
+                "hidden"
+            );
+
+
+            setProgress(100);
+
+
+            setStatus(
+                "Menu extraction completed successfully. Review the JSON, then click Generate Menu.",
+                "success"
+            );
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            setStatus(
+                "Conversion failed:\n\n" +
+                error.message,
+                "error"
+            );
+
+        } finally {
+
+            convertBtn.disabled = false;
+
+        }
+
+    }
+);
+
+
+// ------------------------------------------------------------
+// GENERATE HTML
+// ------------------------------------------------------------
+
+$("generateBtn").addEventListener(
+    "click",
+    async () => {
+
+        try {
+
+            const menu =
+                JSON.parse(
+                    jsonEditor.value
+                );
+
+
+            normalizeMenu(menu);
+
+            extractedData =
+                menu;
+
+
+            setStatus(
+                "Generating mobile menu...",
+                "info"
+            );
+
+
+            generatedImageData =
+                [];
+
+
+            if (
+                $("includePhotos").checked &&
+                selectedPDF
+            ) {
+
+                generatedImageData =
+                    await extractPhotos(
+                        selectedPDF,
+                        menu
+                    );
+
+            }
+
+
+            generatedHTML =
+                buildMenuHTML(
+                    menu,
+                    generatedImageData
+                );
+
+
+            outputCard.classList.remove(
+                "hidden"
+            );
+
+
+            previewFrame.srcdoc =
+                generatedHTML;
+
+
+            setStatus(
+                "Menu generated successfully.",
+                "success"
+            );
+
+
+            outputCard.scrollIntoView({
+                behavior: "smooth"
+            });
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            setStatus(
+                "Could not generate menu:\n\n" +
+                error.message,
+                "error"
+            );
+
+        }
+
+    }
+);
+
+
+// ------------------------------------------------------------
+// PREVIEW BUTTON
+// ------------------------------------------------------------
+
+$("previewBtn").addEventListener(
+    "click",
+    () => {
+
+        try {
+
+            const menu =
+                JSON.parse(
+                    jsonEditor.value
+                );
+
+
+            normalizeMenu(menu);
+
+
+            generatedHTML =
+                buildMenuHTML(
+                    menu,
+                    generatedImageData
+                );
+
+
+            outputCard.classList.remove(
+                "hidden"
+            );
+
+
+            previewFrame.srcdoc =
+                generatedHTML;
+
+
+            outputCard.scrollIntoView({
+                behavior: "smooth"
+            });
+
+
+        } catch (error) {
+
+            setStatus(
+                "Invalid JSON:\n\n" +
+                error.message,
+                "error"
+            );
+
+        }
+
+    }
+);
+
+
+// ------------------------------------------------------------
+// PDF PHOTO EXTRACTION
+// ------------------------------------------------------------
+
+async function extractPhotos(
+    pdfFile,
+    menu
+) {
+
+    setStatus(
+        "Extracting food photos from PDF...",
+        "info"
+    );
+
+
+    const buffer =
+        await pdfFile.arrayBuffer();
+
+
+    const pdf =
+        await pdfjsLib.getDocument({
+            data: buffer
         }).promise;
 
 
-        pages[pageNumber] =
-          canvas;
-
-      }
+    const result = [];
 
 
-      const canvas =
-        pages[pageNumber];
+    let imageCounter = 0;
 
 
-      const values =
-        p.box.map(clamp);
+    for (
+        const category of menu.categories
+    ) {
+
+        for (
+            const item of category.items
+        ) {
+
+            if (!item.photo) {
+                continue;
+            }
 
 
-      let [
-        y1,
-        x1,
-        y2,
-        x2
-      ] = values;
+            const photo =
+                item.photo;
 
 
-      /*
-       * Prevent reversed boxes.
-       */
+            if (
+                photo.page < 1 ||
+                photo.page > pdf.numPages
+            ) {
 
-      if(x2 < x1)
-        [x1,x2] = [x2,x1];
+                continue;
 
-      if(y2 < y1)
-        [y1,y2] = [y2,y1];
-
-
-      const sx =
-        x1 / 1000 *
-        canvas.width;
+            }
 
 
-      const sy =
-        y1 / 1000 *
-        canvas.height;
+            try {
+
+                const page =
+                    await pdf.getPage(
+                        photo.page
+                    );
 
 
-      const sw =
-        (x2-x1) / 1000 *
-        canvas.width;
+                /*
+                    Render page at good quality.
+                */
+
+                const viewport =
+                    page.getViewport({
+                        scale: 2
+                    });
 
 
-      const sh =
-        (y2-y1) / 1000 *
-        canvas.height;
+                const canvas =
+                    document.createElement(
+                        "canvas"
+                    );
 
 
-      if(
-        sw < 20 ||
-        sh < 20
-      ){
+                canvas.width =
+                    Math.ceil(
+                        viewport.width
+                    );
 
-        continue;
-
-      }
-
-
-      const scale =
-        Math.min(
-          1,
-          800 / sw
-        );
+                canvas.height =
+                    Math.ceil(
+                        viewport.height
+                    );
 
 
-      const output =
-        document.createElement(
-          "canvas"
-        );
+                const ctx =
+                    canvas.getContext(
+                        "2d"
+                    );
 
 
-      output.width =
-        Math.max(
-          1,
-          Math.round(sw * scale)
-        );
+                await page.render({
+                    canvasContext: ctx,
+                    viewport
+                }).promise;
 
 
-      output.height =
-        Math.max(
-          1,
-          Math.round(sh * scale)
-        );
+                const sx =
+                    Math.floor(
+                        photo.x *
+                        canvas.width
+                    );
+
+                const sy =
+                    Math.floor(
+                        photo.y *
+                        canvas.height
+                    );
+
+                const sw =
+                    Math.floor(
+                        photo.width *
+                        canvas.width
+                    );
+
+                const sh =
+                    Math.floor(
+                        photo.height *
+                        canvas.height
+                    );
 
 
-      output
-        .getContext("2d")
-        .drawImage(
-          canvas,
-          sx,
-          sy,
-          sw,
-          sh,
-          0,
-          0,
-          output.width,
-          output.height
-        );
+                if (
+                    sw < 10 ||
+                    sh < 10
+                ) {
+
+                    continue;
+
+                }
 
 
-      imgs[
-        ci + ":" + ii
-      ] =
-        output.toDataURL(
-          "image/jpeg",
-          0.78
-        );
+                const crop =
+                    document.createElement(
+                        "canvas"
+                    );
 
 
-      completed++;
+                crop.width =
+                    sw;
 
-      progress(
-        70 +
-        (
-          completed /
-          jobs.length
-        ) * 18
-      );
+                crop.height =
+                    sh;
+
+
+                crop
+                    .getContext("2d")
+                    .drawImage(
+                        canvas,
+                        sx,
+                        sy,
+                        sw,
+                        sh,
+                        0,
+                        0,
+                        sw,
+                        sh
+                    );
+
+
+                const dataURL =
+                    crop.toDataURL(
+                        "image/jpeg",
+                        0.88
+                    );
+
+
+                result.push({
+
+                    itemName:
+                        item.name,
+
+                    dataURL,
+
+                    filename:
+                        `item-${String(
+                            ++imageCounter
+                        ).padStart(3, "0")}.jpg`
+
+                });
+
+
+            } catch (error) {
+
+                console.warn(
+                    "Could not extract photo:",
+                    item.name,
+                    error
+                );
+
+            }
+
+        }
 
     }
 
-  }
-  catch(error){
 
-    console.error(error);
-
-    say(
-      "Menu created, but some photos could not be extracted: "
-      + error.message,
-      true
-    );
-
-  }
-
-
-  return Object.keys(imgs).length;
+    return result;
 
 }
 
 
-/* ============================================================
-   MENU HTML
-============================================================ */
+// ------------------------------------------------------------
+// ESCAPE HTML
+// ------------------------------------------------------------
 
-function buildMenu(d){
+function escapeHTML(value) {
 
-  const colors =
-    d.colors || {};
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
 
 
-  const bg =
-    safeColor(
-      colors.bg,
-      "#FFFFFF"
+// ------------------------------------------------------------
+// FIND PHOTO
+// ------------------------------------------------------------
+
+function findPhoto(
+    itemName,
+    photos
+) {
+
+    return photos.find(
+        p =>
+            p.itemName === itemName
     );
 
-
-  const ink =
-    safeColor(
-      colors.ink,
-      "#171717"
-    );
+}
 
 
-  const accent =
-    safeColor(
-      colors.accent,
-      "#0E5A57"
-    );
+// ------------------------------------------------------------
+// BUILD MENU HTML
+// ------------------------------------------------------------
+
+function buildMenuHTML(
+    menu,
+    photos
+) {
+
+    const primary =
+        escapeHTML(
+            menu.primaryColor
+        );
+
+    const secondary =
+        escapeHTML(
+            menu.secondaryColor
+        );
 
 
-  const categories =
-    (d.categories || [])
-      .map(
-        (category,categoryIndex) => {
-
-          const items =
-            (category.items || [])
-              .map(
-                (item,itemIndex) => {
-
-                  const image =
-                    imgs[
-                      categoryIndex +
-                      ":" +
-                      itemIndex
-                    ];
+    let categoriesHTML = "";
 
 
-                  const tags =
-                    Array.isArray(
-                      item.tags
-                    )
-                      ? item.tags
-                      : [];
+    for (
+        const category of menu.categories
+    ) {
+
+        let itemsHTML = "";
 
 
-                  return `
+        for (
+            const item of category.items
+        ) {
 
-<article class="item ${image ? "has-image" : ""}">
-
-  <div class="item-text">
-
-    <div class="item-top">
-
-      <h3>
-        ${escapeHTML(item.name)}
-      </h3>
-
-      <span class="price">
-        ${escapeHTML(item.price)}
-      </span>
-
-    </div>
-
-    ${
-      item.description
-        ? `
-        <p>
-          ${escapeHTML(
-            item.description
-          )}
-        </p>
-        `
-        : ""
-    }
-
-    ${
-      tags.length
-        ? `
-        <div class="tags">
-
-          ${
-            tags
-              .map(
-                tag =>
-                  `<span>${escapeHTML(tag)}</span>`
-              )
-              .join("")
-          }
-
-        </div>
-        `
-        : ""
-    }
-
-  </div>
-
-  ${
-    image
-      ? `
-      <img
-        src="${image}"
-        alt="${escapeHTML(item.name)}"
-        loading="lazy"
-      >
-      `
-      : ""
-  }
-
-</article>
-
-`;
-
-                }
-              )
-              .join("");
+            const photo =
+                findPhoto(
+                    item.name,
+                    photos
+                );
 
 
-          return `
+            const imageHTML =
+                photo
+                    ? `
+                        <img
+                            class="item-image"
+                            src="${photo.dataURL}"
+                            alt="${escapeHTML(item.name)}"
+                        >
+                    `
+                    : "";
 
-<section
-  class="category"
-  id="category-${categoryIndex}"
->
 
-  <h2>
-    ${escapeHTML(category.name)}
-  </h2>
+            const descriptionHTML =
+                item.description
+                    ? `
+                        <div class="description">
+                            ${escapeHTML(
+                                item.description
+                            )}
+                        </div>
+                    `
+                    : "";
 
-  ${
-    category.note
-      ? `
-      <p class="category-note">
-        ${escapeHTML(category.note)}
-      </p>
-      `
-      : ""
-  }
 
-  ${items}
+            const priceHTML =
+                item.price
+                    ? `
+                        <div class="price">
+                            ${escapeHTML(
+                                item.price
+                            )}
+                        </div>
+                    `
+                    : "";
 
-</section>
 
-`;
+            itemsHTML += `
+                <article class="item">
+
+                    ${imageHTML}
+
+                    <div class="item-content">
+
+                        <div class="item-header">
+
+                            <h3>
+                                ${escapeHTML(
+                                    item.name
+                                )}
+                            </h3>
+
+                            ${priceHTML}
+
+                        </div>
+
+                        ${descriptionHTML}
+
+                    </div>
+
+                </article>
+            `;
 
         }
-      )
-      .join("");
 
 
-  const navigation =
-    (d.categories || [])
-      .map(
-        (category,index) =>
-          `
-          <a href="#category-${index}">
-            ${escapeHTML(category.name)}
-          </a>
-          `
-      )
-      .join("");
+        categoriesHTML += `
+            <section
+                class="category"
+                data-category="${escapeHTML(
+                    category.name
+                )}"
+            >
+
+                <h2>
+                    ${escapeHTML(
+                        category.name
+                    )}
+                </h2>
+
+                <div class="items">
+                    ${itemsHTML}
+                </div>
+
+            </section>
+        `;
+
+    }
 
 
-  return `<!DOCTYPE html>
+    const categoryButtons =
+        menu.categories
+            .map(
+                c =>
+                    `
+                    <button
+                        class="chip"
+                        data-target="${escapeHTML(
+                            c.name
+                        )}"
+                    >
+                        ${escapeHTML(
+                            c.name
+                        )}
+                    </button>
+                    `
+            )
+            .join("");
+
+
+    const currency =
+        menu.currency
+            ? `
+                <div class="currency">
+                    ${escapeHTML(
+                        menu.currency
+                    )}
+                </div>
+            `
+            : "";
+
+
+    return `<!DOCTYPE html>
 
 <html lang="en">
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="UTF-8">
 
 <meta
-  name="viewport"
-  content="width=device-width,initial-scale=1"
->
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+/>
 
 <title>
-  ${escapeHTML(
-    d.name || "Menu"
-  )}
+    ${escapeHTML(
+        menu.restaurantName
+    )}
 </title>
 
 <style>
 
-:root{
-
-  --bg:${bg};
-
-  --ink:${ink};
-
-  --accent:${accent};
-
-  --line:color-mix(
-    in srgb,
-    ${ink} 18%,
-    transparent
-  );
-
+* {
+    box-sizing: border-box;
 }
 
-*{
-  box-sizing:border-box;
+html {
+    scroll-behavior: smooth;
 }
 
-html{
-  scroll-behavior:smooth;
+body {
+    margin: 0;
+    background: ${secondary};
+    color: #171717;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Arial,
+        sans-serif;
 }
 
-body{
-
-  margin:0;
-
-  background:var(--bg);
-
-  color:var(--ink);
-
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
-
-  line-height:1.55;
-
+.header {
+    background: ${primary};
+    color: white;
+    text-align: center;
+    padding: 34px 18px 28px;
 }
 
-header{
-
-  max-width:760px;
-
-  margin:auto;
-
-  padding:
-    46px
-    20px
-    22px;
-
-  text-align:center;
-
+.header h1 {
+    margin: 0;
+    font-size: 30px;
 }
 
-header h1{
-
-  margin:0;
-
-  font-size:
-    clamp(
-      2rem,
-      8vw,
-      3.5rem
-    );
-
-  line-height:1.05;
-
+.tagline {
+    margin-top: 8px;
+    opacity: .85;
+    font-size: 14px;
 }
 
-header p{
-
-  margin:
-    8px
-    0
-    0;
-
-  opacity:.7;
-
+.currency {
+    margin-top: 10px;
+    font-size: 12px;
+    opacity: .7;
 }
 
-nav{
-
-  position:sticky;
-
-  top:0;
-
-  z-index:10;
-
-  background:
-    color-mix(
-      in srgb,
-      var(--bg) 94%,
-      transparent
-    );
-
-  backdrop-filter:
-    blur(10px);
-
-  border-bottom:
-    1px solid var(--line);
-
+.search-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 12px;
+    background: rgba(255,255,255,.96);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #eee;
 }
 
-.nav-inner{
-
-  max-width:760px;
-
-  margin:auto;
-
-  padding:
-    10px
-    14px;
-
+.search {
+    width: 100%;
+    max-width: 760px;
+    display: block;
+    margin: auto;
+    padding: 13px 15px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-size: 16px;
+    outline: none;
 }
 
-.search{
-
-  width:100%;
-
-  padding:
-    11px
-    13px;
-
-  border:
-    1px solid var(--line);
-
-  border-radius:10px;
-
-  background:transparent;
-
-  color:inherit;
-
-  font:inherit;
-
-  margin-bottom:9px;
-
+.chips {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    max-width: 900px;
+    margin: 10px auto 0;
+    padding-bottom: 3px;
 }
 
-.chips{
-
-  display:flex;
-
-  gap:7px;
-
-  overflow-x:auto;
-
-  scrollbar-width:none;
-
+.chip {
+    flex: 0 0 auto;
+    border: 0;
+    background: #f0f0f0;
+    color: #333;
+    padding: 9px 13px;
+    border-radius: 30px;
+    font-size: 13px;
+    cursor: pointer;
 }
 
-.chips::-webkit-scrollbar{
-  display:none;
+.main {
+    max-width: 850px;
+    margin: auto;
+    padding: 20px 14px 60px;
 }
 
-.chips a{
-
-  flex:none;
-
-  text-decoration:none;
-
-  color:inherit;
-
-  border:
-    1px solid var(--line);
-
-  border-radius:999px;
-
-  padding:
-    6px
-    13px;
-
-  font:
-    14px
-    system-ui,
-    sans-serif;
-
+.category {
+    margin-bottom: 34px;
+    scroll-margin-top: 105px;
 }
 
-.chips a:hover{
-
-  background:
-    var(--ink);
-
-  color:
-    var(--bg);
-
+.category h2 {
+    font-size: 22px;
+    margin: 0 0 13px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid ${primary};
 }
 
-main{
-
-  max-width:760px;
-
-  margin:auto;
-
-  padding:
-    5px
-    20px
-    70px;
-
+.item {
+    display: flex;
+    gap: 14px;
+    padding: 15px 0;
+    border-bottom: 1px solid #ededed;
 }
 
-.category{
-
-  padding-top:30px;
-
-  scroll-margin-top:125px;
-
+.item-image {
+    width: 105px;
+    height: 85px;
+    object-fit: cover;
+    border-radius: 11px;
+    flex: 0 0 105px;
 }
 
-.category h2{
-
-  color:var(--accent);
-
-  font-size:1.65rem;
-
-  margin:
-    0
-    0
-    4px;
-
+.item-content {
+    flex: 1;
+    min-width: 0;
 }
 
-.category-note{
-
-  margin:
-    0
-    0
-    8px;
-
-  opacity:.7;
-
-  font-style:italic;
-
+.item-header {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: flex-start;
 }
 
-.item{
-
-  padding:
-    16px
-    0;
-
-  border-bottom:
-    1px solid var(--line);
-
+.item h3 {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.3;
 }
 
-.item.has-image{
-
-  display:grid;
-
-  grid-template-columns:
-    1fr
-    auto;
-
-  gap:15px;
-
-  align-items:start;
-
+.price {
+    font-weight: 700;
+    white-space: nowrap;
+    color: ${primary};
 }
 
-.item-text{
-  min-width:0;
+.description {
+    margin-top: 6px;
+    color: #666;
+    line-height: 1.45;
+    font-size: 13px;
 }
 
-.item-top{
+@media(max-width:480px) {
 
-  display:flex;
+    .item-image {
+        width: 88px;
+        height: 72px;
+        flex-basis: 88px;
+    }
 
-  justify-content:
-    space-between;
+    .item {
+        gap: 11px;
+    }
 
-  align-items:
-    baseline;
-
-  gap:15px;
-
-}
-
-.item h3{
-
-  margin:0;
-
-  font-size:1.08rem;
-
-}
-
-.price{
-
-  white-space:nowrap;
-
-  font:
-    700
-    15px
-    system-ui,
-    sans-serif;
-
-}
-
-.item p{
-
-  margin:
-    5px
-    0
-    0;
-
-  opacity:.78;
-
-}
-
-.item img{
-
-  width:105px;
-
-  height:105px;
-
-  object-fit:cover;
-
-  border-radius:10px;
-
-  cursor:zoom-in;
-
-}
-
-.item img.zoomed{
-
-  width:100%;
-
-  height:auto;
-
-  max-height:75vh;
-
-  object-fit:contain;
-
-  grid-column:
-    1 / -1;
-
-  cursor:zoom-out;
-
-}
-
-.tags{
-
-  display:flex;
-
-  flex-wrap:wrap;
-
-  gap:5px;
-
-  margin-top:7px;
-
-}
-
-.tags span{
-
-  font:
-    12px
-    system-ui,
-    sans-serif;
-
-  padding:
-    2px
-    8px;
-
-  border:
-    1px solid var(--accent);
-
-  color:var(--accent);
-
-  border-radius:999px;
-
-}
-
-.no-results{
-
-  display:none;
-
-  text-align:center;
-
-  padding:
-    50px
-    0;
-
-  opacity:.6;
-
-}
-
-@media(max-width:500px){
-
-  .item.has-image{
-
-    grid-template-columns:
-      1fr
-      82px;
-
-  }
-
-  .item img{
-
-    width:82px;
-
-    height:82px;
-
-  }
+    .header h1 {
+        font-size: 26px;
+    }
 
 }
 
@@ -2381,58 +2341,59 @@ main{
 
 <body>
 
-<header>
+<header class="header">
 
-  <h1>
-    ${escapeHTML(
-      d.name || "Menu"
-    )}
-  </h1>
+    <h1>
+        ${escapeHTML(
+            menu.restaurantName
+        )}
+    </h1>
 
-  ${
-    d.tagline
-      ? `
-      <p>
-        ${escapeHTML(d.tagline)}
-      </p>
-      `
-      : ""
-  }
+    ${
+        menu.tagline
+            ? `
+                <div class="tagline">
+                    ${escapeHTML(
+                        menu.tagline
+                    )}
+                </div>
+            `
+            : ""
+    }
+
+    ${currency}
 
 </header>
 
 
-<nav>
-
-  <div class="nav-inner">
+<div class="search-wrap">
 
     <input
-      id="search"
-      class="search"
-      type="search"
-      placeholder="Search the menu…"
-      aria-label="Search menu"
+        id="search"
+        class="search"
+        type="search"
+        placeholder="Search menu..."
     >
 
     <div class="chips">
-      ${navigation}
+
+        <button
+            class="chip"
+            data-target="all"
+        >
+            All
+        </button>
+
+        ${categoryButtons}
+
     </div>
 
-  </div>
-
-</nav>
+</div>
 
 
-<main>
+<main class="main">
 
-  ${categories}
-
-  <div
-    id="no-results"
-    class="no-results"
-  >
-    Nothing matches your search.
-  </div>
+    ${categoriesHTML}
 
 </main>
 
@@ -2440,107 +2401,90 @@ main{
 <script>
 
 const search =
-  document.getElementById(
-    "search"
-  );
+    document.getElementById("search");
 
+const categories =
+    [...document.querySelectorAll(".category")];
+
+const chips =
+    [...document.querySelectorAll(".chip")];
 
 search.addEventListener(
-  "input",
-  function(){
+    "input",
+    () => {
 
-    const query =
-      search.value
-        .toLowerCase()
-        .trim();
-
-
-    let found = false;
+        const query =
+            search.value
+                .toLowerCase()
+                .trim();
 
 
-    document
-      .querySelectorAll(
-        ".category"
-      )
-      .forEach(
-        category => {
+        categories.forEach(category => {
 
-          let visible = 0;
+            const text =
+                category.textContent
+                    .toLowerCase();
 
 
-          category
-            .querySelectorAll(
-              ".item"
-            )
-            .forEach(
-              item => {
-
-                const match =
-                  !query ||
-                  item.textContent
-                    .toLowerCase()
-                    .includes(query);
-
-
-                item.style.display =
-                  match
+            category.style.display =
+                !query ||
+                text.includes(query)
                     ? ""
                     : "none";
 
+        });
 
-                if(match)
-                  visible++;
-
-              }
-            );
-
-
-          category.style.display =
-            visible
-              ? ""
-              : "none";
-
-
-          if(visible)
-            found = true;
-
-        }
-      );
-
-
-    document
-      .getElementById(
-        "no-results"
-      )
-      .style.display =
-        found
-          ? "none"
-          : "block";
-
-  }
+    }
 );
 
 
-document
-  .querySelectorAll(
-    ".item img"
-  )
-  .forEach(
-    image => {
+chips.forEach(chip => {
 
-      image.addEventListener(
+    chip.addEventListener(
         "click",
         () => {
 
-          image.classList.toggle(
-            "zoomed"
-          );
+            const target =
+                chip.dataset.target;
+
+
+            if (target === "all") {
+
+                categories.forEach(
+                    c =>
+                        c.style.display = ""
+                );
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+
+                return;
+
+            }
+
+
+            const category =
+                categories.find(
+                    c =>
+                        c.dataset.category ===
+                        target
+                );
+
+
+            if (category) {
+
+                category.scrollIntoView({
+                    behavior: "smooth"
+                });
+
+            }
 
         }
-      );
+    );
 
-    }
-  );
+});
 
 <\/script>
 
@@ -2551,206 +2495,104 @@ document
 }
 
 
-/* ============================================================
-   SHOW RESULT
-============================================================ */
+// ------------------------------------------------------------
+// DOWNLOAD
+// ------------------------------------------------------------
 
-function show(){
+$("downloadBtn").addEventListener(
+    "click",
+    () => {
 
-  html =
-    buildMenu(data);
+        if (!generatedHTML) {
 
+            setStatus(
+                "Generate the menu first.",
+                "error"
+            );
 
-  $("preview").srcdoc =
-    html;
+            return;
 
-
-  $("json").value =
-    JSON.stringify(
-      data,
-      null,
-      2
-    );
-
-
-  $("result").hidden =
-    false;
-
-
-  $("result")
-    .scrollIntoView({
-      behavior:"smooth"
-    });
-
-}
-
-
-/* ============================================================
-   DOWNLOAD
-============================================================ */
-
-$("dl").onclick =
-  function(){
-
-    const blob =
-      new Blob(
-        [html],
-        {
-          type:
-            "text/html;charset=utf-8"
         }
-      );
 
 
-    const url =
-      URL.createObjectURL(
-        blob
-      );
+        const blob =
+            new Blob(
+                [generatedHTML],
+                {
+                    type:
+                        "text/html;charset=utf-8"
+                }
+            );
 
 
-    const link =
-      document.createElement(
-        "a"
-      );
+        const url =
+            URL.createObjectURL(
+                blob
+            );
 
 
-    link.href =
-      url;
+        const a =
+            document.createElement("a");
 
 
-    link.download =
-      "menu.html";
+        a.href = url;
+
+        a.download =
+            "menu.html";
 
 
-    document.body
-      .appendChild(link);
+        document.body.appendChild(a);
+
+        a.click();
+
+        a.remove();
+
+        URL.revokeObjectURL(url);
+
+    }
+);
 
 
-    link.click();
+// ------------------------------------------------------------
+// OPEN PREVIEW
+// ------------------------------------------------------------
 
+$("openBtn").addEventListener(
+    "click",
+    () => {
 
-    link.remove();
+        if (!generatedHTML) {
 
+            return;
 
-    setTimeout(
-      () =>
-        URL.revokeObjectURL(url),
-      1000
-    );
-
-  };
-
-
-/* ============================================================
-   OPEN
-============================================================ */
-
-$("open").onclick =
-  function(){
-
-    const blob =
-      new Blob(
-        [html],
-        {
-          type:
-            "text/html;charset=utf-8"
         }
-      );
 
 
-    const url =
-      URL.createObjectURL(
-        blob
-      );
+        const blob =
+            new Blob(
+                [generatedHTML],
+                {
+                    type:
+                        "text/html;charset=utf-8"
+                }
+            );
 
 
-    window.open(
-      url,
-      "_blank"
-    );
-
-  };
+        const url =
+            URL.createObjectURL(
+                blob
+            );
 
 
-/* ============================================================
-   EDITOR
-============================================================ */
-
-$("toggle").onclick =
-  function(){
-
-    $("editor").hidden =
-      !$("editor").hidden;
-
-  };
-
-
-$("apply").onclick =
-  async function(){
-
-    try{
-
-      data =
-        JSON.parse(
-          $("json").value
+        window.open(
+            url,
+            "_blank"
         );
 
-
-      normalizeData();
-
-
-      if(
-        $("usePhotos").checked
-      ){
-
-        await cropAll();
-
-      }
-      else{
-
-        imgs = {};
-
-      }
-
-
-      show();
-
-
-      say(
-        "Changes applied.",
-        false,
-        true
-      );
-
     }
-    catch(error){
-
-      say(
-        "Invalid JSON: " +
-        error.message,
-        true
-      );
-
-    }
-
-  };
-
-
-/* ============================================================
-   RESET PROGRESS WHEN FILE CHANGES
-============================================================ */
-
-$("file").addEventListener(
-  "change",
-  () => {
-
-    progress(0);
-
-  }
 );
 
 </script>
 
 </body>
 </html>
-````
