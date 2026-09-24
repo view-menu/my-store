@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Menu PDF to HTML</title>
+<script src="pdf.min.js"></script>
+<script src="pdf.worker.min.js"></script>
+<style>
+:root{
+  --bg:#F3F5F2; --paper:#FFFFFF; --ink:#16302B; --muted:#5B6E69; --line:#D5DDD9;
+  --accent:#2F6B4F; --accent-ink:#FFFFFF; --warn:#A23B2A;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101816; --paper:#17221F; --ink:#E4EEEA; --muted:#94A8A2; --line:#2B3B37;
+    --accent:#6FBF95; --accent-ink:#0D1A15; --warn:#F08A76;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101816; --paper:#17221F; --ink:#E4EEEA; --muted:#94A8A2; --line:#2B3B37;
+  --accent:#6FBF95; --accent-ink:#0D1A15; --warn:#F08A76;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+main{max-width:720px;margin:0 auto;padding:32px 20px 64px}
+h1{font-size:clamp(2rem,7vw,3.2rem);font-weight:800;line-height:1.02;letter-spacing:-.02em;margin:0 0 12px}
+.lede{color:var(--muted);margin:0 0 28px;max-width:52ch}
+.drop{display:block;border:2px dashed var(--line);border-radius:18px;background:var(--paper);
+  padding:36px 20px;text-align:center;cursor:pointer;transition:border-color .15s}
+.drop:hover,.drop.over{border-color:var(--accent)}
+.drop strong{display:block;font-size:1.15rem}
+.drop span{color:var(--muted);font-size:.95rem}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.drop:focus-within{outline:3px solid var(--accent);outline-offset:3px}
+.fields{display:grid;gap:14px;margin:22px 0}
+label.f{display:grid;gap:6px;font-weight:600;font-size:.95rem}
+input[type=text],select{font:inherit;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--paper);color:var(--ink);width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+button{font:inherit;font-weight:600;border:0;border-radius:999px;padding:12px 22px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.status{min-height:1.5em;color:var(--muted);margin:14px 0}
+.status.err{color:var(--warn)}
+.bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;display:none}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.preview{margin-top:26px;display:none}
+.preview iframe{width:100%;height:70vh;border:1px solid var(--line);border-radius:14px;background:#fff}
+.note{font-size:.9rem;color:var(--muted);margin-top:10px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Turn your menu PDF into a web page</h1>
+  <p class="lede">Upload the PDF with your dishes and photos. You get one HTML file with everything inside it, so it opens without internet and looks the same on every phone.</p>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="application/pdf">
+    <strong id="dropTitle">Choose a PDF or drop it here</strong>
+    <span id="dropSub">Your file stays on this device. Nothing is uploaded.</span>
+  </label>
+
+  <div class="fields">
+    <label class="f">Restaurant name (shown as the page title)
+      <input type="text" id="name" placeholder="e.g. Trattoria Sole">
+    </label>
+    <label class="f">Photo quality
+      <select id="quality">
+        <option value="1.6|0.78">Light – smaller file, quick to load</option>
+        <option value="2.2|0.85" selected>Standard – sharp on phones</option>
+        <option value="3|0.9">High – best for tablets and zoom</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="row">
+    <button class="primary" id="convert" disabled>Convert to HTML</button>
+    <button class="ghost" id="download" disabled>Download HTML</button>
+  </div>
+  <div class="status" id="status" role="status"></div>
+  <div class="bar" id="bar"><i></i></div>
+
+  <section class="preview" id="preview">
+    <iframe id="frame" title="Menu preview"></iframe>
+    <p class="note">This is exactly what your guests will see. Put the downloaded file on your website or USB/tablet; its contents can't be changed by visitors.</p>
+  </section>
+</main>
+
+<script>
+(function(){
+  var fileInput=document.getElementById('file'), drop=document.getElementById('drop');
+  var convertBtn=document.getElementById('convert'), dlBtn=document.getElementById('download');
+  var statusEl=document.getElementById('status'), bar=document.getElementById('bar');
+  var preview=document.getElementById('preview'), frame=document.getElementById('frame');
+  var pdfFile=null, outputHtml=null;
+
+  if(window.pdfjsLib){
+    pdfjsLib.GlobalWorkerOptions.workerSrc='pdf.worker.min.js';
+  }
+
+  function setStatus(msg,err){statusEl.textContent=msg;statusEl.className='status'+(err?' err':'');}
+  function setProgress(p){bar.style.display=p==null?'none':'block';bar.firstElementChild.style.width=((p||0)*100)+'%';}
+
+  function pick(f){
+    if(!f)return;
+    if(f.type!=='application/pdf' && !/\.pdf$/i.test(f.name)){setStatus('That file is not a PDF. Choose a .pdf file.',true);return;}
+    pdfFile=f; outputHtml=null; dlBtn.disabled=true;
+    document.getElementById('dropTitle').textContent=f.name;
+    document.getElementById('dropSub').textContent=(f.size/1048576).toFixed(1)+' MB · tap to choose another';
+    var nameEl=document.getElementById('name');
+    if(!nameEl.value) nameEl.value=f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ');
+    convertBtn.disabled=false; setStatus('');
+  }
+  fileInput.addEventListener('change',function(){pick(fileInput.files[0]);});
+  ['dragenter','dragover'].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.add('over');});});
+  ['dragleave','drop'].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.remove('over');});});
+  drop.addEventListener('drop',function(ev){pick(ev.dataTransfer.files[0]);});
+
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+  function buildHtml(title,pages){
+    var nav='';
+    if(pages.length>1){
+      nav='<nav>'+pages.map(function(_,i){return '<a href="#p'+(i+1)+'">'+(i+1)+'</a>';}).join('')+'</nav>';
+    }
+    var body=pages.map(function(p,i){
+      return '<section id="p'+(i+1)+'" class="pg"><img src="'+p.img+'" width="'+p.w+'" height="'+p.h+'" alt="'+esc(title)+' menu page '+(i+1)+'"'+(i>0?' loading="lazy"':'')+'>'+
+        (p.text?'<div class="txt">'+esc(p.text)+'</div>':'')+'</section>';
+    }).join('\n');
+    return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'+
+      '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'+
+      '<meta name="color-scheme" content="light dark">\n'+
+      '<title>'+esc(title)+'</title>\n<style>\n'+
+      'html,body{margin:0;background:#1b1b1b}body{font-family:system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}'+
+      'header{position:sticky;top:0;z-index:2;background:rgba(20,20,20,.92);color:#fff;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));margin-top:calc(-1 * env(safe-area-inset-top,0px));display:flex;align-items:center;gap:12px;flex-wrap:wrap}'+
+      'h1{font-size:1.05rem;margin:0;font-weight:600}nav{display:flex;gap:6px;overflow-x:auto;margin-left:auto}'+
+      'nav a{color:#fff;text-decoration:none;border:1px solid #555;border-radius:999px;min-width:34px;text-align:center;padding:4px 10px;font-size:.9rem}'+
+      'main{max-width:900px;margin:0 auto;padding:10px 0 30px}.pg{margin:0 0 10px;scroll-margin-top:60px}'+
+      '.pg img{display:block;width:100%;height:auto;background:#fff}'+
+      '.txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:pre-wrap}'+
+      '\n</style>\n</head>\n<body>\n<header><h1>'+esc(title)+'</h1>'+nav+'</header>\n<main>\n'+body+'\n</main>\n</body>\n</html>\n';
+  }
+
+  convertBtn.addEventListener('click',async function(){
+    if(!pdfFile)return;
+    if(!window.pdfjsLib){setStatus('The PDF reader did not load. Make sure pdf.min.js and pdf.worker.min.js are in the same folder as index.html.',true);return;}
+    var q=document.getElementById('quality').value.split('|'), scale=+q[0], jpg=+q[1];
+    var title=document.getElementById('name').value.trim()||'Menu';
+    convertBtn.disabled=true; dlBtn.disabled=true; setProgress(0);
+    try{
+      setStatus('Reading PDF…');
+      var buf=await pdfFile.arrayBuffer();
+      var pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      var pages=[];
+      for(var i=1;i<=pdf.numPages;i++){
+        setStatus('Converting page '+i+' of '+pdf.numPages+'…');
+        var page=await pdf.getPage(i);
+        var vp=page.getViewport({scale:scale});
+        var c=document.createElement('canvas');
+        c.width=Math.round(vp.width); c.height=Math.round(vp.height);
+        var ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);
+        await page.render({canvasContext:ctx,viewport:vp}).promise;
+        var text='';
+        try{var tc=await page.getTextContent();text=tc.items.map(function(t){return t.str+(t.hasEOL?'\n':' ');}).join('').replace(/[ \t]+/g,' ').trim();}catch(e){}
+        pages.push({img:c.toDataURL('image/jpeg',jpg),w:c.width,h:c.height,text:text});
+        c.width=c.height=0;
+        setProgress(i/pdf.numPages);
+      }
+      outputHtml=buildHtml(title,pages);
+      frame.srcdoc=outputHtml; preview.style.display='block';
+      var mb=(new Blob([outputHtml]).size/1048576).toFixed(1);
+      setStatus('Done: '+pdf.numPages+' page'+(pdf.numPages>1?'s':'')+', '+mb+' MB. Download the file below.');
+      dlBtn.disabled=false;
+    }catch(e){
+      console.error(e);
+      setStatus('This PDF could not be converted. If it is password-protected, save an unlocked copy and try again.',true);
+    }finally{convertBtn.disabled=false; setProgress(null);}
+  });
+
+  function slug(s){return (s||'menu').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'menu';}
+
+  dlBtn.addEventListener('click',async function(){
+    if(!outputHtml)return;
+    var filename=slug(document.getElementById('name').value)+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([outputHtml],{type:'text/html'}));
+    a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    setStatus('Saved '+filename+'.');
+  });
+})();
+</script>
+</body>
+</html>
