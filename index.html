@@ -1,328 +1,2756 @@
+````html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PDF menu to HTML</title>
+
+<title>PDF Menu → HTML</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
 <style>
-:root{--bg:#EEF1EE;--ink:#17262B;--mute:#5B6B6F;--line:#CBD3CF;--card:#fff;--accent:#0E5A57;--warn:#B3261E}
-@media (prefers-color-scheme:dark){:root{--bg:#121B1E;--ink:#E8EEEC;--mute:#9AABAE;--line:#2B3A3E;--card:#1A2629;--accent:#5ED0C6;--warn:#FF8A80}}
-*{box-sizing:border-box}
-body{margin:0;font-family:"Bricolage Grotesque",system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
-main{max-width:980px;margin:0 auto;padding:32px 20px 64px}
-h1{font-size:clamp(2rem,6vw,3.4rem);line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:0 0 8px}
-p.lead{color:var(--mute);margin:0 0 28px;max-width:56ch}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px}
-label{display:block;font-weight:600;margin-bottom:6px}
-input[type=password],input[type=text],select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
-.row{display:grid;grid-template-columns:2fr 1fr;gap:14px}
-@media(max-width:600px){.row{grid-template-columns:1fr}}
-small{color:var(--mute)}
-#drop{border:2px dashed var(--line);border-radius:10px;padding:36px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
-#drop:hover,#drop:focus-visible,#drop.over{border-color:var(--accent);background:var(--bg);outline:none}
-#drop strong{display:block;font-size:1.15rem}
-button{font:inherit;font-weight:600;padding:10px 16px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
-button.ghost{background:transparent;color:var(--ink)}
-button:disabled{opacity:.5;cursor:wait}
-button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
-#status{min-height:1.5em;font-weight:600}
-#status.err{color:var(--warn)}
-iframe{width:100%;height:640px;border:1px solid var(--line);border-radius:10px;background:#fff}
-textarea{width:100%;height:220px;font:13px/1.4 ui-monospace,Menlo,monospace;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:10px}
-[hidden]{display:none!important}
+:root{
+  --bg:#EEF1EE;
+  --ink:#17262B;
+  --mute:#5B6B6F;
+  --line:#CBD3CF;
+  --card:#FFFFFF;
+  --accent:#0E5A57;
+  --warn:#B3261E;
+  --good:#176B4D;
+}
+
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#121B1E;
+    --ink:#E8EEEC;
+    --mute:#9AABAE;
+    --line:#2B3A3E;
+    --card:#1A2629;
+    --accent:#5ED0C6;
+    --warn:#FF8A80;
+    --good:#72D6A5;
+  }
+}
+
+*{
+  box-sizing:border-box;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  margin:0;
+  font-family:"Bricolage Grotesque",system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  line-height:1.5;
+}
+
+main{
+  max-width:1000px;
+  margin:0 auto;
+  padding:32px 20px 70px;
+}
+
+h1{
+  font-size:clamp(2rem,6vw,3.5rem);
+  line-height:1.02;
+  letter-spacing:-.04em;
+  font-weight:800;
+  margin:0 0 10px;
+}
+
+.lead{
+  color:var(--mute);
+  margin:0 0 28px;
+  max-width:65ch;
+}
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:20px;
+  margin-bottom:20px;
+}
+
+label{
+  display:block;
+  font-weight:600;
+  margin-bottom:6px;
+}
+
+input[type=password],
+input[type=text],
+select{
+  width:100%;
+  padding:11px 12px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:var(--bg);
+  color:var(--ink);
+  font:inherit;
+}
+
+.row{
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:14px;
+}
+
+@media(max-width:650px){
+  .row{
+    grid-template-columns:1fr;
+  }
+}
+
+small{
+  color:var(--mute);
+}
+
+#drop{
+  border:2px dashed var(--line);
+  border-radius:12px;
+  padding:42px 16px;
+  text-align:center;
+  cursor:pointer;
+  transition:.15s;
+}
+
+#drop:hover,
+#drop:focus-visible,
+#drop.over{
+  border-color:var(--accent);
+  background:var(--bg);
+  outline:none;
+}
+
+#drop strong{
+  display:block;
+  font-size:1.15rem;
+  margin-bottom:4px;
+}
+
+button{
+  font:inherit;
+  font-weight:600;
+  padding:11px 16px;
+  border-radius:8px;
+  border:1px solid var(--ink);
+  background:var(--ink);
+  color:var(--bg);
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:.9;
+}
+
+button.ghost{
+  background:transparent;
+  color:var(--ink);
+}
+
+button.green{
+  background:var(--good);
+  border-color:var(--good);
+  color:white;
+}
+
+button:disabled{
+  opacity:.5;
+  cursor:wait;
+}
+
+button:focus-visible{
+  outline:3px solid var(--accent);
+  outline-offset:2px;
+}
+
+.actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:14px 0;
+}
+
+#status{
+  min-height:1.6em;
+  font-weight:600;
+  margin-top:10px;
+}
+
+#status.err{
+  color:var(--warn);
+}
+
+#status.good{
+  color:var(--good);
+}
+
+.progress{
+  height:6px;
+  background:var(--line);
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:12px;
+}
+
+.progress div{
+  height:100%;
+  width:0%;
+  background:var(--accent);
+  transition:width .25s;
+}
+
+iframe{
+  width:100%;
+  height:700px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:white;
+}
+
+textarea{
+  width:100%;
+  min-height:300px;
+  font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
+  background:var(--bg);
+  color:var(--ink);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:12px;
+}
+
+.info{
+  padding:12px 14px;
+  border-radius:8px;
+  background:var(--bg);
+  color:var(--mute);
+  font-size:.9rem;
+  margin-top:12px;
+}
+
+.file-name{
+  font-weight:600;
+  color:var(--ink);
+}
+
+[hidden]{
+  display:none!important;
+}
 </style>
 </head>
+
 <body>
+
 <main>
-  <h1>Upload a PDF menu.<br>Get a menu that works on a phone.</h1>
-  <p class="lead">Drop in the client's PDF. Claude reads the text and colors, and the page builds a searchable HTML menu you can preview, fix and download.</p>
 
-  <section class="panel">
-    <div style="margin-bottom:14px"><label for="prov">Provider</label>
-      <select id="prov"><option value="gemini">Google Gemini (free tier)</option><option value="claude">Anthropic Claude (paid)</option></select></div>
-    <div class="row">
-      <div>
-        <label for="key">API key</label>
-        <input id="key" type="password" autocomplete="off" placeholder="sk-ant-...">
-        <small>Saved only in this browser. Gemini keys are free from aistudio.google.com.</small>
-      </div>
-      <div>
-        <label for="model">Model</label>
-        <input id="model" type="text" value="claude-sonnet-5">
-      </div>
+<h1>
+  Upload a PDF menu.<br>
+  Get a menu that works on a phone.
+</h1>
+
+<p class="lead">
+  Upload a restaurant menu PDF and Gemini will extract the menu structure,
+  prices, descriptions, colors and optional food photos. The result is a
+  standalone mobile-friendly HTML menu.
+</p>
+
+<!-- PROVIDER -->
+
+<section class="panel">
+
+  <div style="margin-bottom:16px">
+
+    <label for="prov">
+      AI Provider
+    </label>
+
+    <select id="prov">
+      <option value="gemini">
+        Google Gemini
+      </option>
+      <option value="claude">
+        Anthropic Claude
+      </option>
+    </select>
+
+  </div>
+
+  <div class="row">
+
+    <div>
+
+      <label for="key">
+        API key
+      </label>
+
+      <input
+        id="key"
+        type="password"
+        autocomplete="off"
+        placeholder="AIza..."
+      >
+
+      <small>
+        Saved only in this browser.
+      </small>
+
     </div>
-  </section>
 
-  <section class="panel">
-    <div id="drop" tabindex="0" role="button" aria-label="Choose a PDF menu">
-      <strong>Drop the PDF menu here</strong>
-      <small id="fname">or click to choose a file (up to 30 MB)</small>
+    <div>
+
+      <label for="model">
+        Model
+      </label>
+
+      <input
+        id="model"
+        type="text"
+        value="gemini-3-flash-preview"
+      >
+
+      <small>
+        Gemini 3 Flash Preview
+      </small>
+
     </div>
-    <input id="file" type="file" accept="application/pdf" hidden>
-    <label style="font-weight:400;margin-top:14px"><input type="checkbox" id="usePhotos" checked> Include the photos from the PDF</label>
-    <div class="actions"><button id="go" disabled>Convert to HTML</button></div>
-    <div id="status" role="status" aria-live="polite"></div>
-  </section>
 
-  <section id="result" hidden>
+  </div>
+
+</section>
+
+
+<!-- PDF -->
+
+<section class="panel">
+
+  <div
+    id="drop"
+    tabindex="0"
+    role="button"
+    aria-label="Choose PDF menu"
+  >
+
+    <strong>
+      Drop your PDF menu here
+    </strong>
+
+    <small id="fname">
+      or click to choose a PDF
+    </small>
+
+  </div>
+
+  <input
+    id="file"
+    type="file"
+    accept="application/pdf"
+    hidden
+  >
+
+  <label style="font-weight:400;margin-top:16px">
+
+    <input
+      type="checkbox"
+      id="usePhotos"
+      checked
+    >
+
+    Include photos from the PDF
+
+  </label>
+
+  <div class="info">
+    Maximum PDF size: 50 MB.
+    Photos are extracted locally in your browser.
+  </div>
+
+  <div class="actions">
+
+    <button id="go" disabled>
+      Convert to HTML
+    </button>
+
+  </div>
+
+  <div id="status" role="status" aria-live="polite"></div>
+
+  <div class="progress">
+    <div id="progressBar"></div>
+  </div>
+
+</section>
+
+
+<!-- RESULT -->
+
+<section id="result" hidden>
+
+  <div class="panel">
+
     <div class="actions">
-      <button id="dl">Download menu.html</button>
-      <button id="open" class="ghost">Open in new tab</button>
-      <button id="toggle" class="ghost">Edit extracted data</button>
+
+      <button id="dl">
+        Download menu.html
+      </button>
+
+      <button id="open" class="ghost">
+        Open in new tab
+      </button>
+
+      <button id="toggle" class="ghost">
+        Edit extracted data
+      </button>
+
     </div>
-    <div id="editor" class="panel" hidden>
-      <label for="json">Extracted data (fix names or prices, then apply)</label>
-      <textarea id="json" spellcheck="false"></textarea>
-      <div class="actions"><button id="apply">Apply changes</button></div>
+
+  </div>
+
+  <div
+    id="editor"
+    class="panel"
+    hidden
+  >
+
+    <label for="json">
+      Extracted menu data
+    </label>
+
+    <textarea
+      id="json"
+      spellcheck="false"
+    ></textarea>
+
+    <div class="actions">
+
+      <button id="apply">
+        Apply changes
+      </button>
+
     </div>
-    <iframe id="preview" title="Menu preview"></iframe>
-  </section>
+
+  </div>
+
+  <iframe
+    id="preview"
+    title="Menu preview"
+  ></iframe>
+
+</section>
+
 </main>
 
+
 <script>
+
+/* ============================================================
+   CONFIGURATION
+============================================================ */
+
 const $ = id => document.getElementById(id);
-let pdfFile = null, data = null;
 
-const DEF = { gemini: 'gemini-3-flash-preview', claude: 'claude-sonnet-5' };
-$('prov').value = localStorage.getItem('menuProv') || 'gemini';
-const load = () => {
-  const p = $('prov').value;
-  $('key').value = localStorage.getItem('menuKey_' + p) || '';
-  $('model').value = localStorage.getItem('menuModel_' + p) || DEF[p];
-  $('key').placeholder = p === 'gemini' ? 'AIza...' : 'sk-ant-...';
+const DEFAULT_MODELS = {
+
+  gemini:
+    "gemini-3-flash-preview",
+
+  claude:
+    "claude-sonnet-5"
+
 };
-$('prov').onchange = load; load();
 
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const color = (c, d) => /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : d;
-const say = (t, err) => { $('status').textContent = t; $('status').className = err ? 'err' : ''; };
 
-/* ---------- file picking ---------- */
-const drop = $('drop');
-drop.onclick = () => $('file').click();
-drop.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } };
-['dragover', 'dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
-['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
-drop.addEventListener('drop', e => pick(e.dataTransfer.files[0]));
-$('file').onchange = e => pick(e.target.files[0]);
+/* ============================================================
+   GLOBAL STATE
+============================================================ */
 
-function pick(f) {
-  if (!f) return;
-  if (f.type !== 'application/pdf') return say('That file is not a PDF. Choose a .pdf menu.', true);
-  if (f.size > 30 * 1024 * 1024) return say('The PDF is over 30 MB. Compress it and try again.', true);
-  pdfFile = f; $('fname').textContent = f.name; $('go').disabled = false; say('');
+let pdfFile = null;
+
+let data = null;
+
+let html = "";
+
+let pdfDoc = null;
+
+let imgs = {};
+
+
+/* ============================================================
+   PROVIDER SETTINGS
+============================================================ */
+
+$("prov").value =
+  localStorage.getItem("menuProv") || "gemini";
+
+
+function loadProvider(){
+
+  const provider = $("prov").value;
+
+  $("key").value =
+    localStorage.getItem(
+      "menuKey_" + provider
+    ) || "";
+
+  $("model").value =
+    localStorage.getItem(
+      "menuModel_" + provider
+    ) ||
+    DEFAULT_MODELS[provider];
+
+  $("key").placeholder =
+    provider === "gemini"
+      ? "AIza..."
+      : "sk-ant-...";
+
 }
 
-const toBase64 = f => new Promise((res, rej) => {
-  const r = new FileReader();
-  r.onload = () => res(r.result.split(',')[1]);
-  r.onerror = () => rej(new Error('Could not read the file.'));
-  r.readAsDataURL(f);
-});
 
-/* ---------- conversion ---------- */
-const PROMPT = `Read this restaurant menu PDF and return ONLY valid JSON (no markdown fences, no commentary) in this shape:
-{"name":"venue name","tagline":"short subtitle or empty string","currency":"symbol or code as printed, or empty","colors":{"bg":"#hex page background suited to the menu's look","ink":"#hex text color","accent":"#hex brand color"},"categories":[{"name":"section name","note":"section note or empty","items":[{"name":"","description":"","price":"as printed","tags":["e.g. vegan, spicy, new"]}]}]}
-Rules: keep the original language and wording, do not invent items or prices, keep every item in reading order, use an empty string when a field is missing. Choose colors from the PDF's design, with ink readable on bg.`;
-const PHOTO_RULE = `
-Also add to every item a "photo" field: null when the item has no picture, otherwise {"page":N,"box":[ymin,xmin,ymax,xmax]} where N is the 1-based PDF page number and box is the tight bounding box of that item's photo only (not its text), in coordinates normalized to 0-1000 relative to the full page (0,0 is top-left). Give a photo only when a picture clearly belongs to that item.`;
+$("prov").addEventListener(
+  "change",
+  loadProvider
+);
 
-$('go').onclick = async () => {
-  const prov = $('prov').value, key = $('key').value.trim(), model = $('model').value.trim();
-  if (!key) return say('Add your API key first.', true);
-  localStorage.setItem('menuProv', prov); localStorage.setItem('menuKey_' + prov, key); localStorage.setItem('menuModel_' + prov, model);
-  $('go').disabled = true; say('Reading the menu. This takes 20 to 60 seconds…');
-  try {
-    const b64 = await toBase64(pdfFile);
-    const prompt = PROMPT + ($('usePhotos').checked ? PHOTO_RULE : '');
-    let text;
-    if (prov === 'gemini') {
-      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({
-          contents: [{ parts: [{ inline_data: { mime_type: 'application/pdf', data: b64 } }, { text: prompt }] }],
-          generationConfig: { responseMimeType: 'application/json' }
-        })
-      });
-      const out = await res.json();
-      if (!res.ok) throw new Error(out.error?.message || ('Request failed (' + res.status + ')'));
-      text = (out.candidates?.[0]?.content?.parts || []).map(x => x.text || '').join('');
-    } else {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model, max_tokens: 16000,
-          messages: [{ role: 'user', content: [
-            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } },
-            { type: 'text', text: prompt }
-          ]}]
-        })
-      });
-      const out = await res.json();
-      if (!res.ok) throw new Error(out.error?.message || ('Request failed (' + res.status + ')'));
-      text = out.content.filter(b => b.type === 'text').map(b => b.text).join('');
-    }
-    const clean = text.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
-    data = JSON.parse(clean.slice(clean.indexOf('{'), clean.lastIndexOf('}') + 1));
-    pdfDoc = null; imgs = {};
-    let n = 0;
-    if ($('usePhotos').checked) { say('Cutting out the photos…'); n = await cropAll(); }
-    show(); say('Done. ' + (n ? n + ' photos cut out. ' : '') + 'Check names, prices and photos in the preview before sharing.');
-  } catch (e) {
-    say('Conversion failed: ' + e.message, true);
-  } finally { $('go').disabled = false; }
+loadProvider();
+
+
+/* ============================================================
+   HELPERS
+============================================================ */
+
+function escapeHTML(value){
+
+  return String(value ?? "")
+    .replace(/[&<>"']/g, c => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#39;"
+    }[c]));
+
+}
+
+
+function safeColor(value, fallback){
+
+  return /^#[0-9a-f]{3,8}$/i.test(value || "")
+    ? value
+    : fallback;
+
+}
+
+
+function say(message, error=false, good=false){
+
+  $("status").textContent = message;
+
+  $("status").className =
+    error
+      ? "err"
+      : good
+        ? "good"
+        : "";
+
+}
+
+
+function progress(percent){
+
+  $("progressBar").style.width =
+    Math.max(0, Math.min(100, percent)) + "%";
+
+}
+
+
+/* ============================================================
+   FILE PICKER
+============================================================ */
+
+const drop = $("drop");
+
+
+drop.onclick = () =>
+  $("file").click();
+
+
+drop.onkeydown = event => {
+
+  if(
+    event.key === "Enter" ||
+    event.key === " "
+  ){
+
+    event.preventDefault();
+
+    $("file").click();
+
+  }
+
 };
 
-/* ---------- photos ---------- */
-let pdfDoc = null, imgs = {};
-async function cropAll() {
-  imgs = {};
-  const jobs = [];
-  (data.categories || []).forEach((k, ci) => (k.items || []).forEach((it, ii) => {
-    const p = it.photo;
-    if (p && Number.isInteger(p.page) && Array.isArray(p.box) && p.box.length === 4) jobs.push([ci, ii, p]);
-  }));
-  if (!jobs.length) return 0;
-  try {
-    if (!pdfDoc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      pdfDoc = await pdfjsLib.getDocument({ data: await pdfFile.arrayBuffer() }).promise;
-    }
-    const pages = {}, cl = n => Math.max(0, Math.min(1000, n));
-    for (const [ci, ii, p] of jobs) {
-      if (p.page < 1 || p.page > pdfDoc.numPages) continue;
-      if (!pages[p.page]) {
-        const pg = await pdfDoc.getPage(p.page);
-        const w = pg.getViewport({ scale: 1 }).width;
-        const v = pg.getViewport({ scale: Math.min(3, 2000 / w) });
-        const c = document.createElement('canvas');
-        c.width = Math.round(v.width); c.height = Math.round(v.height);
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
-        await pg.render({ canvasContext: ctx, viewport: v }).promise;
-        pages[p.page] = c;
+
+["dragenter","dragover"].forEach(
+  eventName => {
+
+    drop.addEventListener(
+      eventName,
+      event => {
+
+        event.preventDefault();
+
+        drop.classList.add("over");
+
       }
-      const c = pages[p.page];
-      const [y1, x1, y2, x2] = p.box.map(Number).map(cl);
-      const sx = x1 / 1000 * c.width, sy = y1 / 1000 * c.height;
-      const sw = (x2 - x1) / 1000 * c.width, sh = (y2 - y1) / 1000 * c.height;
-      if (!(sw > 20 && sh > 20)) continue;
-      const k = Math.min(1, 640 / sw);
-      const o = document.createElement('canvas');
-      o.width = Math.round(sw * k); o.height = Math.round(sh * k);
-      o.getContext('2d').drawImage(c, sx, sy, sw, sh, 0, 0, o.width, o.height);
-      imgs[ci + ':' + ii] = o.toDataURL('image/jpeg', 0.75);
+    );
+
+  }
+);
+
+
+["dragleave","drop"].forEach(
+  eventName => {
+
+    drop.addEventListener(
+      eventName,
+      event => {
+
+        event.preventDefault();
+
+        drop.classList.remove("over");
+
+      }
+    );
+
+  }
+);
+
+
+drop.addEventListener(
+  "drop",
+  event => {
+
+    pick(
+      event.dataTransfer.files[0]
+    );
+
+  }
+);
+
+
+$("file").addEventListener(
+  "change",
+  event => {
+
+    pick(event.target.files[0]);
+
+  }
+);
+
+
+function pick(file){
+
+  if(!file)
+    return;
+
+  if(
+    file.type !==
+    "application/pdf"
+  ){
+
+    say(
+      "Please choose a PDF file.",
+      true
+    );
+
+    return;
+
+  }
+
+
+  if(
+    file.size >
+    50 * 1024 * 1024
+  ){
+
+    say(
+      "PDF is larger than 50 MB.",
+      true
+    );
+
+    return;
+
+  }
+
+
+  pdfFile = file;
+
+  $("fname").innerHTML =
+    `<span class="file-name">${escapeHTML(file.name)}</span>
+     · ${(file.size / 1024 / 1024).toFixed(1)} MB`;
+
+  $("go").disabled = false;
+
+  say(
+    "PDF ready. Click Convert to HTML."
+  );
+
+}
+
+
+/* ============================================================
+   BASE64
+============================================================ */
+
+function fileToBase64(file){
+
+  return new Promise(
+    (resolve,reject) => {
+
+      const reader =
+        new FileReader();
+
+      reader.onload = () => {
+
+        const result =
+          reader.result;
+
+        resolve(
+          result.split(",")[1]
+        );
+
+      };
+
+      reader.onerror = () =>
+        reject(
+          new Error(
+            "Could not read the PDF."
+          )
+        );
+
+      reader.readAsDataURL(file);
+
     }
-  } catch (e) { say('Photos could not be cut out: ' + e.message, true); }
+  );
+
+}
+
+
+/* ============================================================
+   GEMINI PROMPT
+============================================================ */
+
+const BASE_PROMPT = `
+
+Read this restaurant menu PDF carefully.
+
+Return ONLY valid JSON.
+
+Do not use markdown.
+
+Do not add commentary.
+
+Use this exact structure:
+
+{
+  "name": "restaurant name",
+  "tagline": "short subtitle or empty string",
+  "currency": "currency exactly as printed",
+  "colors": {
+    "bg": "#hex",
+    "ink": "#hex",
+    "accent": "#hex"
+  },
+  "categories": [
+    {
+      "name": "category name",
+      "note": "category note or empty string",
+      "items": [
+        {
+          "name": "item name",
+          "description": "description",
+          "price": "price exactly as printed",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}
+
+IMPORTANT:
+
+1. Preserve the original language.
+2. Preserve item names.
+3. Preserve descriptions.
+4. Preserve prices exactly.
+5. Do not invent menu items.
+6. Do not invent prices.
+7. Keep items in reading order.
+8. Keep every visible menu item.
+9. If information is missing, use an empty string.
+10. Detect the restaurant's visual colors from the PDF.
+11. Make sure text color is readable against the background.
+12. Include all menu categories.
+13. Include drinks, desserts, sides and extras.
+14. Do not summarize the menu.
+
+`;
+
+
+const PHOTO_PROMPT = `
+
+For each menu item also add:
+
+"photo": null
+
+OR:
+
+"photo": {
+  "page": 1,
+  "box": [ymin,xmin,ymax,xmax]
+}
+
+The page number must be 1-based.
+
+The box coordinates must be normalized from 0 to 1000.
+
+0,0 is the top-left of the PDF page.
+
+Only assign a photo when a clearly identifiable photo belongs to that specific menu item.
+
+Do NOT assign decorative images to unrelated items.
+
+The box must cover the food photo only, not the item's text.
+
+`;
+
+
+/* ============================================================
+   GEMINI REQUEST
+============================================================ */
+
+async function callGemini(
+  apiKey,
+  model,
+  base64,
+  prompt
+){
+
+  const url =
+    "https://generativelanguage.googleapis.com/v1beta/models/"
+    + encodeURIComponent(model)
+    + ":generateContent";
+
+
+  const response =
+    await fetch(
+      url,
+      {
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+            "application/json",
+
+          "x-goog-api-key":
+            apiKey
+        },
+
+        body:JSON.stringify({
+
+          contents:[
+            {
+              parts:[
+                {
+                  inline_data:{
+                    mime_type:
+                      "application/pdf",
+
+                    data:base64
+                  }
+                },
+
+                {
+                  text:prompt
+                }
+              ]
+            }
+          ],
+
+          generationConfig:{
+            responseMimeType:
+              "application/json",
+
+            temperature:0
+          }
+
+        })
+
+      }
+    );
+
+
+  const output =
+    await response.json();
+
+
+  if(!response.ok){
+
+    const error =
+      new Error(
+        output?.error?.message ||
+        `Gemini request failed (${response.status})`
+      );
+
+    error.status =
+      response.status;
+
+    throw error;
+
+  }
+
+
+  const text =
+    (
+      output.candidates?.[0]
+        ?.content?.parts || []
+    )
+    .map(
+      part => part.text || ""
+    )
+    .join("");
+
+
+  if(!text){
+
+    throw new Error(
+      "Gemini returned an empty response."
+    );
+
+  }
+
+
+  return text;
+
+}
+
+
+/* ============================================================
+   RETRY LOGIC
+============================================================ */
+
+function shouldRetry(error){
+
+  const status =
+    Number(error.status);
+
+  if(
+    status === 429 ||
+    status === 500 ||
+    status === 502 ||
+    status === 503 ||
+    status === 504
+  ){
+
+    return true;
+
+  }
+
+
+  const message =
+    String(error.message || "")
+      .toLowerCase();
+
+
+  return(
+    message.includes("high demand") ||
+    message.includes("overloaded") ||
+    message.includes("temporarily unavailable") ||
+    message.includes("try again later")
+  );
+
+}
+
+
+function wait(ms){
+
+  return new Promise(
+    resolve =>
+      setTimeout(resolve,ms)
+  );
+
+}
+
+
+async function callGeminiWithRetry(
+  apiKey,
+  model,
+  base64,
+  prompt
+){
+
+  const maxAttempts = 4;
+
+  for(
+    let attempt = 1;
+    attempt <= maxAttempts;
+    attempt++
+  ){
+
+    try{
+
+      say(
+        attempt === 1
+          ? "Sending PDF to Gemini…"
+          : `Gemini is busy. Retrying (${attempt}/${maxAttempts})…`
+      );
+
+      return await callGemini(
+        apiKey,
+        model,
+        base64,
+        prompt
+      );
+
+    }
+    catch(error){
+
+      if(
+        !shouldRetry(error) ||
+        attempt === maxAttempts
+      ){
+
+        throw error;
+
+      }
+
+
+      const delay =
+        Math.min(
+          15000,
+          2000 * Math.pow(2, attempt - 1)
+        );
+
+      await wait(delay);
+
+    }
+
+  }
+
+}
+
+
+/* ============================================================
+   PARSE JSON
+============================================================ */
+
+function parseModelJSON(text){
+
+  let clean =
+    String(text)
+      .replace(/^```json\s*/i,"")
+      .replace(/^```\s*/i,"")
+      .replace(/\s*```$/,"")
+      .trim();
+
+
+  const first =
+    clean.indexOf("{");
+
+  const last =
+    clean.lastIndexOf("}");
+
+
+  if(
+    first === -1 ||
+    last === -1 ||
+    last <= first
+  ){
+
+    throw new Error(
+      "Gemini did not return valid JSON."
+    );
+
+  }
+
+
+  clean =
+    clean.slice(
+      first,
+      last + 1
+    );
+
+
+  let result;
+
+  try{
+
+    result =
+      JSON.parse(clean);
+
+  }
+  catch(error){
+
+    throw new Error(
+      "Gemini returned malformed JSON."
+    );
+
+  }
+
+
+  if(
+    !result ||
+    !Array.isArray(result.categories)
+  ){
+
+    throw new Error(
+      "Gemini returned an unexpected menu structure."
+    );
+
+  }
+
+
+  return result;
+
+}
+
+
+/* ============================================================
+   CONVERT
+============================================================ */
+
+$("go").onclick =
+  async function(){
+
+    if(!pdfFile){
+
+      say(
+        "Choose a PDF first.",
+        true
+      );
+
+      return;
+
+    }
+
+
+    const provider =
+      $("prov").value;
+
+    const apiKey =
+      $("key").value.trim();
+
+    const model =
+      $("model").value.trim();
+
+
+    if(!apiKey){
+
+      say(
+        "Enter your API key first.",
+        true
+      );
+
+      return;
+
+    }
+
+
+    localStorage.setItem(
+      "menuProv",
+      provider
+    );
+
+    localStorage.setItem(
+      "menuKey_" + provider,
+      apiKey
+    );
+
+    localStorage.setItem(
+      "menuModel_" + provider,
+      model
+    );
+
+
+    $("go").disabled = true;
+
+    $("result").hidden = true;
+
+    progress(5);
+
+
+    try{
+
+      /*
+       * Currently this converter is optimized
+       * for Gemini.
+       */
+
+      if(provider !== "gemini"){
+
+        throw new Error(
+          "This working version uses Gemini. Select Google Gemini as the provider."
+        );
+
+      }
+
+
+      if(
+        model !==
+        "gemini-3-flash-preview"
+      ){
+
+        say(
+          `Using model: ${model}`
+        );
+
+      }
+
+
+      progress(10);
+
+
+      const base64 =
+        await fileToBase64(
+          pdfFile
+        );
+
+
+      progress(20);
+
+
+      const prompt =
+        BASE_PROMPT +
+        (
+          $("usePhotos").checked
+            ? PHOTO_PROMPT
+            : ""
+        );
+
+
+      const text =
+        await callGeminiWithRetry(
+          apiKey,
+          model,
+          base64,
+          prompt
+        );
+
+
+      progress(65);
+
+
+      data =
+        parseModelJSON(text);
+
+
+      /*
+       * Normalize data so the
+       * HTML generator never crashes.
+       */
+
+      normalizeData();
+
+
+      progress(70);
+
+
+      pdfDoc = null;
+
+      imgs = {};
+
+
+      let photoCount = 0;
+
+
+      if(
+        $("usePhotos").checked
+      ){
+
+        say(
+          "Extracting photos from the PDF…"
+        );
+
+        photoCount =
+          await cropAll();
+
+      }
+
+
+      progress(90);
+
+
+      show();
+
+
+      progress(100);
+
+
+      say(
+        "Done. "
+        +
+        photoCount
+        +
+        " photo(s) extracted. Review the menu before publishing.",
+        false,
+        true
+      );
+
+
+    }
+    catch(error){
+
+      console.error(error);
+
+
+      let message =
+        error.message ||
+        "Unknown error";
+
+
+      if(
+        /401|403/.test(
+          String(error.status || "")
+        )
+      ){
+
+        message =
+          "Gemini rejected the API key. Check that your Gemini API key is correct and that the Gemini API is enabled.";
+
+      }
+      else if(
+        Number(error.status) === 429
+      ){
+
+        message =
+          "Gemini rate limit or temporary overload. Please wait a little and try again.";
+
+      }
+      else if(
+        Number(error.status) === 400
+      ){
+
+        message =
+          "Gemini rejected the request. Check the PDF and selected model.";
+
+      }
+
+
+      say(
+        "Conversion failed: " +
+        message,
+        true
+      );
+
+      progress(0);
+
+    }
+    finally{
+
+      $("go").disabled = false;
+
+    }
+
+  };
+
+
+/* ============================================================
+   NORMALIZE DATA
+============================================================ */
+
+function normalizeData(){
+
+  if(!data.colors)
+    data.colors = {};
+
+
+  if(!Array.isArray(data.categories))
+    data.categories = [];
+
+
+  data.categories =
+    data.categories.map(
+      category => {
+
+        category =
+          category || {};
+
+
+        category.name =
+          category.name || "";
+
+
+        category.note =
+          category.note || "";
+
+
+        if(!Array.isArray(category.items))
+          category.items = [];
+
+
+        category.items =
+          category.items.map(
+            item => {
+
+              item =
+                item || {};
+
+
+              item.name =
+                item.name || "";
+
+
+              item.description =
+                item.description || "";
+
+
+              item.price =
+                item.price || "";
+
+
+              item.tags =
+                Array.isArray(item.tags)
+                  ? item.tags
+                  : [];
+
+
+              if(
+                !("photo" in item)
+              ){
+
+                item.photo =
+                  null;
+
+              }
+
+
+              return item;
+
+            }
+          );
+
+
+        return category;
+
+      }
+    );
+
+}
+
+
+/* ============================================================
+   PDF PHOTO EXTRACTION
+============================================================ */
+
+async function cropAll(){
+
+  imgs = {};
+
+
+  const jobs = [];
+
+
+  (
+    data.categories || []
+  ).forEach(
+    (category, categoryIndex) => {
+
+      (
+        category.items || []
+      ).forEach(
+        (item,itemIndex) => {
+
+          const photo =
+            item.photo;
+
+
+          if(
+            photo &&
+            Number.isInteger(
+              Number(photo.page)
+            ) &&
+            Array.isArray(photo.box) &&
+            photo.box.length === 4
+          ){
+
+            jobs.push([
+              categoryIndex,
+              itemIndex,
+              photo
+            ]);
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+
+  if(!jobs.length)
+    return 0;
+
+
+  try{
+
+    if(!pdfDoc){
+
+      pdfjsLib
+        .GlobalWorkerOptions
+        .workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+
+      pdfDoc =
+        await pdfjsLib
+          .getDocument({
+            data:
+              await pdfFile.arrayBuffer()
+          })
+          .promise;
+
+    }
+
+
+    const pages = {};
+
+
+    const clamp =
+      value =>
+        Math.max(
+          0,
+          Math.min(
+            1000,
+            Number(value) || 0
+          )
+        );
+
+
+    let completed = 0;
+
+
+    for(
+      const [ci,ii,p]
+      of jobs
+    ){
+
+      const pageNumber =
+        Number(p.page);
+
+
+      if(
+        pageNumber < 1 ||
+        pageNumber > pdfDoc.numPages
+      ){
+
+        continue;
+
+      }
+
+
+      if(!pages[pageNumber]){
+
+        const page =
+          await pdfDoc.getPage(
+            pageNumber
+          );
+
+
+        const baseViewport =
+          page.getViewport({
+            scale:1
+          });
+
+
+        const scale =
+          Math.min(
+            3,
+            2000 /
+            baseViewport.width
+          );
+
+
+        const viewport =
+          page.getViewport({
+            scale
+          });
+
+
+        const canvas =
+          document.createElement(
+            "canvas"
+          );
+
+
+        canvas.width =
+          Math.round(
+            viewport.width
+          );
+
+        canvas.height =
+          Math.round(
+            viewport.height
+          );
+
+
+        const context =
+          canvas.getContext(
+            "2d"
+          );
+
+
+        context.fillStyle =
+          "#FFFFFF";
+
+
+        context.fillRect(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+
+
+        await page.render({
+          canvasContext:context,
+          viewport
+        }).promise;
+
+
+        pages[pageNumber] =
+          canvas;
+
+      }
+
+
+      const canvas =
+        pages[pageNumber];
+
+
+      const values =
+        p.box.map(clamp);
+
+
+      let [
+        y1,
+        x1,
+        y2,
+        x2
+      ] = values;
+
+
+      /*
+       * Prevent reversed boxes.
+       */
+
+      if(x2 < x1)
+        [x1,x2] = [x2,x1];
+
+      if(y2 < y1)
+        [y1,y2] = [y2,y1];
+
+
+      const sx =
+        x1 / 1000 *
+        canvas.width;
+
+
+      const sy =
+        y1 / 1000 *
+        canvas.height;
+
+
+      const sw =
+        (x2-x1) / 1000 *
+        canvas.width;
+
+
+      const sh =
+        (y2-y1) / 1000 *
+        canvas.height;
+
+
+      if(
+        sw < 20 ||
+        sh < 20
+      ){
+
+        continue;
+
+      }
+
+
+      const scale =
+        Math.min(
+          1,
+          800 / sw
+        );
+
+
+      const output =
+        document.createElement(
+          "canvas"
+        );
+
+
+      output.width =
+        Math.max(
+          1,
+          Math.round(sw * scale)
+        );
+
+
+      output.height =
+        Math.max(
+          1,
+          Math.round(sh * scale)
+        );
+
+
+      output
+        .getContext("2d")
+        .drawImage(
+          canvas,
+          sx,
+          sy,
+          sw,
+          sh,
+          0,
+          0,
+          output.width,
+          output.height
+        );
+
+
+      imgs[
+        ci + ":" + ii
+      ] =
+        output.toDataURL(
+          "image/jpeg",
+          0.78
+        );
+
+
+      completed++;
+
+      progress(
+        70 +
+        (
+          completed /
+          jobs.length
+        ) * 18
+      );
+
+    }
+
+  }
+  catch(error){
+
+    console.error(error);
+
+    say(
+      "Menu created, but some photos could not be extracted: "
+      + error.message,
+      true
+    );
+
+  }
+
+
   return Object.keys(imgs).length;
+
 }
 
-/* ---------- menu template ---------- */
-function buildMenu(d) {
-  const c = d.colors || {};
-  const bg = color(c.bg, '#FFFFFF'), ink = color(c.ink, '#1A1A1A'), ac = color(c.accent, '#0E5A57');
-  const cats = (d.categories || []).map((k, i) => `
-<section class="cat" id="c${i}">
-  <h2>${esc(k.name)}</h2>${k.note ? `<p class="note">${esc(k.note)}</p>` : ''}
-  ${(k.items || []).map((it, ii) => { const im = imgs[i + ':' + ii]; return `
-  <article class="item${im ? ' has' : ''}">
-    <div class="txt">
-      <div class="top"><h3>${esc(it.name)}</h3><span class="price">${esc(it.price)}</span></div>
-      ${it.description ? `<p>${esc(it.description)}</p>` : ''}
-      ${(it.tags || []).length ? `<div class="tags">${it.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+
+/* ============================================================
+   MENU HTML
+============================================================ */
+
+function buildMenu(d){
+
+  const colors =
+    d.colors || {};
+
+
+  const bg =
+    safeColor(
+      colors.bg,
+      "#FFFFFF"
+    );
+
+
+  const ink =
+    safeColor(
+      colors.ink,
+      "#171717"
+    );
+
+
+  const accent =
+    safeColor(
+      colors.accent,
+      "#0E5A57"
+    );
+
+
+  const categories =
+    (d.categories || [])
+      .map(
+        (category,categoryIndex) => {
+
+          const items =
+            (category.items || [])
+              .map(
+                (item,itemIndex) => {
+
+                  const image =
+                    imgs[
+                      categoryIndex +
+                      ":" +
+                      itemIndex
+                    ];
+
+
+                  const tags =
+                    Array.isArray(
+                      item.tags
+                    )
+                      ? item.tags
+                      : [];
+
+
+                  return `
+
+<article class="item ${image ? "has-image" : ""}">
+
+  <div class="item-text">
+
+    <div class="item-top">
+
+      <h3>
+        ${escapeHTML(item.name)}
+      </h3>
+
+      <span class="price">
+        ${escapeHTML(item.price)}
+      </span>
+
     </div>
-    ${im ? `<img src="${im}" alt="${esc(it.name)}" loading="lazy">` : ''}
-  </article>`; }).join('')}
-</section>`).join('');
-  const nav = (d.categories || []).map((k, i) => `<a href="#c${i}">${esc(k.name)}</a>`).join('');
+
+    ${
+      item.description
+        ? `
+        <p>
+          ${escapeHTML(
+            item.description
+          )}
+        </p>
+        `
+        : ""
+    }
+
+    ${
+      tags.length
+        ? `
+        <div class="tags">
+
+          ${
+            tags
+              .map(
+                tag =>
+                  `<span>${escapeHTML(tag)}</span>`
+              )
+              .join("")
+          }
+
+        </div>
+        `
+        : ""
+    }
+
+  </div>
+
+  ${
+    image
+      ? `
+      <img
+        src="${image}"
+        alt="${escapeHTML(item.name)}"
+        loading="lazy"
+      >
+      `
+      : ""
+  }
+
+</article>
+
+`;
+
+                }
+              )
+              .join("");
+
+
+          return `
+
+<section
+  class="category"
+  id="category-${categoryIndex}"
+>
+
+  <h2>
+    ${escapeHTML(category.name)}
+  </h2>
+
+  ${
+    category.note
+      ? `
+      <p class="category-note">
+        ${escapeHTML(category.note)}
+      </p>
+      `
+      : ""
+  }
+
+  ${items}
+
+</section>
+
+`;
+
+        }
+      )
+      .join("");
+
+
+  const navigation =
+    (d.categories || [])
+      .map(
+        (category,index) =>
+          `
+          <a href="#category-${index}">
+            ${escapeHTML(category.name)}
+          </a>
+          `
+      )
+      .join("");
+
+
   return `<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(d.name || 'Menu')}</title>
+
+<html lang="en">
+
+<head>
+
+<meta charset="utf-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+>
+
+<title>
+  ${escapeHTML(
+    d.name || "Menu"
+  )}
+</title>
+
 <style>
-:root{--bg:${bg};--ink:${ink};--ac:${ac};--line:color-mix(in srgb,${ink} 18%,transparent)}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;line-height:1.5}
-header{padding:40px 20px 16px;text-align:center}
-header h1{margin:0;font-size:clamp(2rem,8vw,3.2rem);line-height:1.05}
-header p{margin:6px 0 0;opacity:.75}
-nav{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);z-index:5;padding:10px 12px}
-.bar{max-width:720px;margin:0 auto}
-.bar input{width:100%;padding:10px 12px;font:inherit;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;margin-bottom:8px}
-.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-.chips a{flex:none;padding:6px 14px;border:1px solid var(--line);border-radius:999px;color:inherit;text-decoration:none;font-family:system-ui,sans-serif;font-size:.9rem}
-.chips a:hover,.chips a:focus-visible{background:var(--ink);color:var(--bg);outline:none}
-main{max-width:720px;margin:0 auto;padding:8px 20px 56px}
-.cat{padding-top:28px;scroll-margin-top:110px}
-.cat h2{font-size:1.6rem;margin:0 0 4px;color:var(--ac)}
-.note{margin:0 0 8px;opacity:.75;font-style:italic}
-.item{padding:14px 0;border-bottom:1px solid var(--line)}
-.item.has{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start}
-.item img{grid-column:2;grid-row:1;width:96px;height:96px;object-fit:cover;border-radius:8px;cursor:zoom-in}
-.item img.big{grid-column:1/-1;grid-row:2;width:100%;height:auto;max-height:70vh;object-fit:contain;cursor:zoom-out}
-.top{display:flex;justify-content:space-between;gap:16px;align-items:baseline}
-.top h3{margin:0;font-size:1.1rem}
-.price{font-family:system-ui,sans-serif;font-weight:700;white-space:nowrap}
-.item p{margin:4px 0 0;opacity:.8}
-.tags{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
-.tags span{font:.75rem system-ui,sans-serif;padding:2px 8px;border:1px solid var(--ac);border-radius:4px;color:var(--ac)}
-.none{display:none;text-align:center;padding:40px 0;opacity:.7}
-</style></head><body>
-<header><h1>${esc(d.name || 'Menu')}</h1>${d.tagline ? `<p>${esc(d.tagline)}</p>` : ''}</header>
-<nav><div class="bar"><input id="q" type="search" placeholder="Search the menu" aria-label="Search the menu"><div class="chips">${nav}</div></div></nav>
-<main>${cats}<p class="none" id="none">Nothing matches your search.</p></main>
-<script>
-var q=document.getElementById('q');
-q.addEventListener('input',function(){
-  var t=q.value.toLowerCase().trim(),any=false;
-  document.querySelectorAll('.cat').forEach(function(s){
-    var n=0;
-    s.querySelectorAll('.item').forEach(function(i){
-      var m=!t||i.textContent.toLowerCase().indexOf(t)>-1;
-      i.style.display=m?'':'none'; if(m)n++;
-    });
-    s.style.display=n?'':'none'; if(n)any=true;
-  });
-  document.getElementById('none').style.display=any?'none':'block';
-});
-document.querySelectorAll('.item img').forEach(function(i){i.addEventListener('click',function(){i.classList.toggle('big')})});
-<\/script></body></html>`;
+
+:root{
+
+  --bg:${bg};
+
+  --ink:${ink};
+
+  --accent:${accent};
+
+  --line:color-mix(
+    in srgb,
+    ${ink} 18%,
+    transparent
+  );
+
 }
 
-/* ---------- preview / export ---------- */
-let html = '';
-function show() {
-  html = buildMenu(data);
-  $('preview').srcdoc = html;
-  $('json').value = JSON.stringify(data, null, 2);
-  $('result').hidden = false;
-  $('result').scrollIntoView({ behavior: 'smooth' });
+*{
+  box-sizing:border-box;
 }
-$('dl').onclick = () => {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-  a.download = 'menu.html'; a.click(); URL.revokeObjectURL(a.href);
-};
-$('open').onclick = () => {
-  const u = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-  window.open(u, '_blank');
-};
-$('toggle').onclick = () => { $('editor').hidden = !$('editor').hidden; };
-$('apply').onclick = async () => {
-  try { data = JSON.parse($('json').value); if ($('usePhotos').checked) await cropAll(); else imgs = {}; show(); say('Changes applied.'); }
-  catch (e) { say('The data is not valid JSON: ' + e.message, true); }
-};
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+
+  margin:0;
+
+  background:var(--bg);
+
+  color:var(--ink);
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  line-height:1.55;
+
+}
+
+header{
+
+  max-width:760px;
+
+  margin:auto;
+
+  padding:
+    46px
+    20px
+    22px;
+
+  text-align:center;
+
+}
+
+header h1{
+
+  margin:0;
+
+  font-size:
+    clamp(
+      2rem,
+      8vw,
+      3.5rem
+    );
+
+  line-height:1.05;
+
+}
+
+header p{
+
+  margin:
+    8px
+    0
+    0;
+
+  opacity:.7;
+
+}
+
+nav{
+
+  position:sticky;
+
+  top:0;
+
+  z-index:10;
+
+  background:
+    color-mix(
+      in srgb,
+      var(--bg) 94%,
+      transparent
+    );
+
+  backdrop-filter:
+    blur(10px);
+
+  border-bottom:
+    1px solid var(--line);
+
+}
+
+.nav-inner{
+
+  max-width:760px;
+
+  margin:auto;
+
+  padding:
+    10px
+    14px;
+
+}
+
+.search{
+
+  width:100%;
+
+  padding:
+    11px
+    13px;
+
+  border:
+    1px solid var(--line);
+
+  border-radius:10px;
+
+  background:transparent;
+
+  color:inherit;
+
+  font:inherit;
+
+  margin-bottom:9px;
+
+}
+
+.chips{
+
+  display:flex;
+
+  gap:7px;
+
+  overflow-x:auto;
+
+  scrollbar-width:none;
+
+}
+
+.chips::-webkit-scrollbar{
+  display:none;
+}
+
+.chips a{
+
+  flex:none;
+
+  text-decoration:none;
+
+  color:inherit;
+
+  border:
+    1px solid var(--line);
+
+  border-radius:999px;
+
+  padding:
+    6px
+    13px;
+
+  font:
+    14px
+    system-ui,
+    sans-serif;
+
+}
+
+.chips a:hover{
+
+  background:
+    var(--ink);
+
+  color:
+    var(--bg);
+
+}
+
+main{
+
+  max-width:760px;
+
+  margin:auto;
+
+  padding:
+    5px
+    20px
+    70px;
+
+}
+
+.category{
+
+  padding-top:30px;
+
+  scroll-margin-top:125px;
+
+}
+
+.category h2{
+
+  color:var(--accent);
+
+  font-size:1.65rem;
+
+  margin:
+    0
+    0
+    4px;
+
+}
+
+.category-note{
+
+  margin:
+    0
+    0
+    8px;
+
+  opacity:.7;
+
+  font-style:italic;
+
+}
+
+.item{
+
+  padding:
+    16px
+    0;
+
+  border-bottom:
+    1px solid var(--line);
+
+}
+
+.item.has-image{
+
+  display:grid;
+
+  grid-template-columns:
+    1fr
+    auto;
+
+  gap:15px;
+
+  align-items:start;
+
+}
+
+.item-text{
+  min-width:0;
+}
+
+.item-top{
+
+  display:flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    baseline;
+
+  gap:15px;
+
+}
+
+.item h3{
+
+  margin:0;
+
+  font-size:1.08rem;
+
+}
+
+.price{
+
+  white-space:nowrap;
+
+  font:
+    700
+    15px
+    system-ui,
+    sans-serif;
+
+}
+
+.item p{
+
+  margin:
+    5px
+    0
+    0;
+
+  opacity:.78;
+
+}
+
+.item img{
+
+  width:105px;
+
+  height:105px;
+
+  object-fit:cover;
+
+  border-radius:10px;
+
+  cursor:zoom-in;
+
+}
+
+.item img.zoomed{
+
+  width:100%;
+
+  height:auto;
+
+  max-height:75vh;
+
+  object-fit:contain;
+
+  grid-column:
+    1 / -1;
+
+  cursor:zoom-out;
+
+}
+
+.tags{
+
+  display:flex;
+
+  flex-wrap:wrap;
+
+  gap:5px;
+
+  margin-top:7px;
+
+}
+
+.tags span{
+
+  font:
+    12px
+    system-ui,
+    sans-serif;
+
+  padding:
+    2px
+    8px;
+
+  border:
+    1px solid var(--accent);
+
+  color:var(--accent);
+
+  border-radius:999px;
+
+}
+
+.no-results{
+
+  display:none;
+
+  text-align:center;
+
+  padding:
+    50px
+    0;
+
+  opacity:.6;
+
+}
+
+@media(max-width:500px){
+
+  .item.has-image{
+
+    grid-template-columns:
+      1fr
+      82px;
+
+  }
+
+  .item img{
+
+    width:82px;
+
+    height:82px;
+
+  }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+  <h1>
+    ${escapeHTML(
+      d.name || "Menu"
+    )}
+  </h1>
+
+  ${
+    d.tagline
+      ? `
+      <p>
+        ${escapeHTML(d.tagline)}
+      </p>
+      `
+      : ""
+  }
+
+</header>
+
+
+<nav>
+
+  <div class="nav-inner">
+
+    <input
+      id="search"
+      class="search"
+      type="search"
+      placeholder="Search the menu…"
+      aria-label="Search menu"
+    >
+
+    <div class="chips">
+      ${navigation}
+    </div>
+
+  </div>
+
+</nav>
+
+
+<main>
+
+  ${categories}
+
+  <div
+    id="no-results"
+    class="no-results"
+  >
+    Nothing matches your search.
+  </div>
+
+</main>
+
+
+<script>
+
+const search =
+  document.getElementById(
+    "search"
+  );
+
+
+search.addEventListener(
+  "input",
+  function(){
+
+    const query =
+      search.value
+        .toLowerCase()
+        .trim();
+
+
+    let found = false;
+
+
+    document
+      .querySelectorAll(
+        ".category"
+      )
+      .forEach(
+        category => {
+
+          let visible = 0;
+
+
+          category
+            .querySelectorAll(
+              ".item"
+            )
+            .forEach(
+              item => {
+
+                const match =
+                  !query ||
+                  item.textContent
+                    .toLowerCase()
+                    .includes(query);
+
+
+                item.style.display =
+                  match
+                    ? ""
+                    : "none";
+
+
+                if(match)
+                  visible++;
+
+              }
+            );
+
+
+          category.style.display =
+            visible
+              ? ""
+              : "none";
+
+
+          if(visible)
+            found = true;
+
+        }
+      );
+
+
+    document
+      .getElementById(
+        "no-results"
+      )
+      .style.display =
+        found
+          ? "none"
+          : "block";
+
+  }
+);
+
+
+document
+  .querySelectorAll(
+    ".item img"
+  )
+  .forEach(
+    image => {
+
+      image.addEventListener(
+        "click",
+        () => {
+
+          image.classList.toggle(
+            "zoomed"
+          );
+
+        }
+      );
+
+    }
+  );
+
+<\/script>
+
+</body>
+
+</html>`;
+
+}
+
+
+/* ============================================================
+   SHOW RESULT
+============================================================ */
+
+function show(){
+
+  html =
+    buildMenu(data);
+
+
+  $("preview").srcdoc =
+    html;
+
+
+  $("json").value =
+    JSON.stringify(
+      data,
+      null,
+      2
+    );
+
+
+  $("result").hidden =
+    false;
+
+
+  $("result")
+    .scrollIntoView({
+      behavior:"smooth"
+    });
+
+}
+
+
+/* ============================================================
+   DOWNLOAD
+============================================================ */
+
+$("dl").onclick =
+  function(){
+
+    const blob =
+      new Blob(
+        [html],
+        {
+          type:
+            "text/html;charset=utf-8"
+        }
+      );
+
+
+    const url =
+      URL.createObjectURL(
+        blob
+      );
+
+
+    const link =
+      document.createElement(
+        "a"
+      );
+
+
+    link.href =
+      url;
+
+
+    link.download =
+      "menu.html";
+
+
+    document.body
+      .appendChild(link);
+
+
+    link.click();
+
+
+    link.remove();
+
+
+    setTimeout(
+      () =>
+        URL.revokeObjectURL(url),
+      1000
+    );
+
+  };
+
+
+/* ============================================================
+   OPEN
+============================================================ */
+
+$("open").onclick =
+  function(){
+
+    const blob =
+      new Blob(
+        [html],
+        {
+          type:
+            "text/html;charset=utf-8"
+        }
+      );
+
+
+    const url =
+      URL.createObjectURL(
+        blob
+      );
+
+
+    window.open(
+      url,
+      "_blank"
+    );
+
+  };
+
+
+/* ============================================================
+   EDITOR
+============================================================ */
+
+$("toggle").onclick =
+  function(){
+
+    $("editor").hidden =
+      !$("editor").hidden;
+
+  };
+
+
+$("apply").onclick =
+  async function(){
+
+    try{
+
+      data =
+        JSON.parse(
+          $("json").value
+        );
+
+
+      normalizeData();
+
+
+      if(
+        $("usePhotos").checked
+      ){
+
+        await cropAll();
+
+      }
+      else{
+
+        imgs = {};
+
+      }
+
+
+      show();
+
+
+      say(
+        "Changes applied.",
+        false,
+        true
+      );
+
+    }
+    catch(error){
+
+      say(
+        "Invalid JSON: " +
+        error.message,
+        true
+      );
+
+    }
+
+  };
+
+
+/* ============================================================
+   RESET PROGRESS WHEN FILE CHANGES
+============================================================ */
+
+$("file").addEventListener(
+  "change",
+  () => {
+
+    progress(0);
+
+  }
+);
+
 </script>
+
 </body>
 </html>
+````
