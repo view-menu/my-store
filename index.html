@@ -6,6 +6,7 @@
 <title>PDF menu to HTML</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 :root{--bg:#EEF1EE;--ink:#17262B;--mute:#5B6B6F;--line:#CBD3CF;--card:#fff;--accent:#0E5A57;--warn:#B3261E}
 @media (prefers-color-scheme:dark){:root{--bg:#121B1E;--ink:#E8EEEC;--mute:#9AABAE;--line:#2B3A3E;--card:#1A2629;--accent:#5ED0C6;--warn:#FF8A80}}
@@ -16,7 +17,7 @@ h1{font-size:clamp(2rem,6vw,3.4rem);line-height:1.02;letter-spacing:-.03em;font-
 p.lead{color:var(--mute);margin:0 0 28px;max-width:56ch}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px}
 label{display:block;font-weight:600;margin-bottom:6px}
-input[type=password],input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+input[type=password],input[type=text],select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
 .row{display:grid;grid-template-columns:2fr 1fr;gap:14px}
 @media(max-width:600px){.row{grid-template-columns:1fr}}
 small{color:var(--mute)}
@@ -41,11 +42,13 @@ textarea{width:100%;height:220px;font:13px/1.4 ui-monospace,Menlo,monospace;back
   <p class="lead">Drop in the client's PDF. Claude reads the text and colors, and the page builds a searchable HTML menu you can preview, fix and download.</p>
 
   <section class="panel">
+    <div style="margin-bottom:14px"><label for="prov">Provider</label>
+      <select id="prov"><option value="gemini">Google Gemini (free tier)</option><option value="claude">Anthropic Claude (paid)</option></select></div>
     <div class="row">
       <div>
-        <label for="key">Anthropic API key</label>
+        <label for="key">API key</label>
         <input id="key" type="password" autocomplete="off" placeholder="sk-ant-...">
-        <small>Saved only in this browser. Anyone using this page needs their own key.</small>
+        <small>Saved only in this browser. Gemini keys are free from aistudio.google.com.</small>
       </div>
       <div>
         <label for="model">Model</label>
@@ -60,6 +63,7 @@ textarea{width:100%;height:220px;font:13px/1.4 ui-monospace,Menlo,monospace;back
       <small id="fname">or click to choose a file (up to 30 MB)</small>
     </div>
     <input id="file" type="file" accept="application/pdf" hidden>
+    <label style="font-weight:400;margin-top:14px"><input type="checkbox" id="usePhotos" checked> Include the photos from the PDF</label>
     <div class="actions"><button id="go" disabled>Convert to HTML</button></div>
     <div id="status" role="status" aria-live="polite"></div>
   </section>
@@ -83,8 +87,15 @@ textarea{width:100%;height:220px;font:13px/1.4 ui-monospace,Menlo,monospace;back
 const $ = id => document.getElementById(id);
 let pdfFile = null, data = null;
 
-$('key').value = localStorage.getItem('menuKey') || '';
-$('model').value = localStorage.getItem('menuModel') || $('model').value;
+const DEF = { gemini: 'gemini-3-flash-preview', claude: 'claude-sonnet-5' };
+$('prov').value = localStorage.getItem('menuProv') || 'gemini';
+const load = () => {
+  const p = $('prov').value;
+  $('key').value = localStorage.getItem('menuKey_' + p) || '';
+  $('model').value = localStorage.getItem('menuModel_' + p) || DEF[p];
+  $('key').placeholder = p === 'gemini' ? 'AIza...' : 'sk-ant-...';
+};
+$('prov').onchange = load; load();
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const color = (c, d) => /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : d;
@@ -117,40 +128,105 @@ const toBase64 = f => new Promise((res, rej) => {
 const PROMPT = `Read this restaurant menu PDF and return ONLY valid JSON (no markdown fences, no commentary) in this shape:
 {"name":"venue name","tagline":"short subtitle or empty string","currency":"symbol or code as printed, or empty","colors":{"bg":"#hex page background suited to the menu's look","ink":"#hex text color","accent":"#hex brand color"},"categories":[{"name":"section name","note":"section note or empty","items":[{"name":"","description":"","price":"as printed","tags":["e.g. vegan, spicy, new"]}]}]}
 Rules: keep the original language and wording, do not invent items or prices, keep every item in reading order, use an empty string when a field is missing. Choose colors from the PDF's design, with ink readable on bg.`;
+const PHOTO_RULE = `
+Also add to every item a "photo" field: null when the item has no picture, otherwise {"page":N,"box":[ymin,xmin,ymax,xmax]} where N is the 1-based PDF page number and box is the tight bounding box of that item's photo only (not its text), in coordinates normalized to 0-1000 relative to the full page (0,0 is top-left). Give a photo only when a picture clearly belongs to that item.`;
 
 $('go').onclick = async () => {
-  const key = $('key').value.trim(), model = $('model').value.trim();
-  if (!key) return say('Add your Anthropic API key first.', true);
-  localStorage.setItem('menuKey', key); localStorage.setItem('menuModel', model);
+  const prov = $('prov').value, key = $('key').value.trim(), model = $('model').value.trim();
+  if (!key) return say('Add your API key first.', true);
+  localStorage.setItem('menuProv', prov); localStorage.setItem('menuKey_' + prov, key); localStorage.setItem('menuModel_' + prov, model);
   $('go').disabled = true; say('Reading the menu. This takes 20 to 60 seconds…');
   try {
     const b64 = await toBase64(pdfFile);
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model, max_tokens: 16000,
-        messages: [{ role: 'user', content: [
-          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } },
-          { type: 'text', text: PROMPT }
-        ]}]
-      })
-    });
-    const out = await res.json();
-    if (!res.ok) throw new Error(out.error?.message || ('Request failed (' + res.status + ')'));
-    const text = out.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    const prompt = PROMPT + ($('usePhotos').checked ? PHOTO_RULE : '');
+    let text;
+    if (prov === 'gemini') {
+      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({
+          contents: [{ parts: [{ inline_data: { mime_type: 'application/pdf', data: b64 } }, { text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' }
+        })
+      });
+      const out = await res.json();
+      if (!res.ok) throw new Error(out.error?.message || ('Request failed (' + res.status + ')'));
+      text = (out.candidates?.[0]?.content?.parts || []).map(x => x.text || '').join('');
+    } else {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model, max_tokens: 16000,
+          messages: [{ role: 'user', content: [
+            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } },
+            { type: 'text', text: prompt }
+          ]}]
+        })
+      });
+      const out = await res.json();
+      if (!res.ok) throw new Error(out.error?.message || ('Request failed (' + res.status + ')'));
+      text = out.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    }
     const clean = text.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
     data = JSON.parse(clean.slice(clean.indexOf('{'), clean.lastIndexOf('}') + 1));
-    show(); say('Done. Check names and prices in the preview before sharing.');
+    pdfDoc = null; imgs = {};
+    let n = 0;
+    if ($('usePhotos').checked) { say('Cutting out the photos…'); n = await cropAll(); }
+    show(); say('Done. ' + (n ? n + ' photos cut out. ' : '') + 'Check names, prices and photos in the preview before sharing.');
   } catch (e) {
     say('Conversion failed: ' + e.message, true);
   } finally { $('go').disabled = false; }
 };
+
+/* ---------- photos ---------- */
+let pdfDoc = null, imgs = {};
+async function cropAll() {
+  imgs = {};
+  const jobs = [];
+  (data.categories || []).forEach((k, ci) => (k.items || []).forEach((it, ii) => {
+    const p = it.photo;
+    if (p && Number.isInteger(p.page) && Array.isArray(p.box) && p.box.length === 4) jobs.push([ci, ii, p]);
+  }));
+  if (!jobs.length) return 0;
+  try {
+    if (!pdfDoc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      pdfDoc = await pdfjsLib.getDocument({ data: await pdfFile.arrayBuffer() }).promise;
+    }
+    const pages = {}, cl = n => Math.max(0, Math.min(1000, n));
+    for (const [ci, ii, p] of jobs) {
+      if (p.page < 1 || p.page > pdfDoc.numPages) continue;
+      if (!pages[p.page]) {
+        const pg = await pdfDoc.getPage(p.page);
+        const w = pg.getViewport({ scale: 1 }).width;
+        const v = pg.getViewport({ scale: Math.min(3, 2000 / w) });
+        const c = document.createElement('canvas');
+        c.width = Math.round(v.width); c.height = Math.round(v.height);
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+        await pg.render({ canvasContext: ctx, viewport: v }).promise;
+        pages[p.page] = c;
+      }
+      const c = pages[p.page];
+      const [y1, x1, y2, x2] = p.box.map(Number).map(cl);
+      const sx = x1 / 1000 * c.width, sy = y1 / 1000 * c.height;
+      const sw = (x2 - x1) / 1000 * c.width, sh = (y2 - y1) / 1000 * c.height;
+      if (!(sw > 20 && sh > 20)) continue;
+      const k = Math.min(1, 640 / sw);
+      const o = document.createElement('canvas');
+      o.width = Math.round(sw * k); o.height = Math.round(sh * k);
+      o.getContext('2d').drawImage(c, sx, sy, sw, sh, 0, 0, o.width, o.height);
+      imgs[ci + ':' + ii] = o.toDataURL('image/jpeg', 0.75);
+    }
+  } catch (e) { say('Photos could not be cut out: ' + e.message, true); }
+  return Object.keys(imgs).length;
+}
 
 /* ---------- menu template ---------- */
 function buildMenu(d) {
@@ -159,12 +235,15 @@ function buildMenu(d) {
   const cats = (d.categories || []).map((k, i) => `
 <section class="cat" id="c${i}">
   <h2>${esc(k.name)}</h2>${k.note ? `<p class="note">${esc(k.note)}</p>` : ''}
-  ${(k.items || []).map(it => `
-  <article class="item">
-    <div class="top"><h3>${esc(it.name)}</h3><span class="price">${esc(it.price)}</span></div>
-    ${it.description ? `<p>${esc(it.description)}</p>` : ''}
-    ${(it.tags || []).length ? `<div class="tags">${it.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
-  </article>`).join('')}
+  ${(k.items || []).map((it, ii) => { const im = imgs[i + ':' + ii]; return `
+  <article class="item${im ? ' has' : ''}">
+    <div class="txt">
+      <div class="top"><h3>${esc(it.name)}</h3><span class="price">${esc(it.price)}</span></div>
+      ${it.description ? `<p>${esc(it.description)}</p>` : ''}
+      ${(it.tags || []).length ? `<div class="tags">${it.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+    </div>
+    ${im ? `<img src="${im}" alt="${esc(it.name)}" loading="lazy">` : ''}
+  </article>`; }).join('')}
 </section>`).join('');
   const nav = (d.categories || []).map((k, i) => `<a href="#c${i}">${esc(k.name)}</a>`).join('');
   return `<!DOCTYPE html>
@@ -189,6 +268,9 @@ main{max-width:720px;margin:0 auto;padding:8px 20px 56px}
 .cat h2{font-size:1.6rem;margin:0 0 4px;color:var(--ac)}
 .note{margin:0 0 8px;opacity:.75;font-style:italic}
 .item{padding:14px 0;border-bottom:1px solid var(--line)}
+.item.has{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start}
+.item img{grid-column:2;grid-row:1;width:96px;height:96px;object-fit:cover;border-radius:8px;cursor:zoom-in}
+.item img.big{grid-column:1/-1;grid-row:2;width:100%;height:auto;max-height:70vh;object-fit:contain;cursor:zoom-out}
 .top{display:flex;justify-content:space-between;gap:16px;align-items:baseline}
 .top h3{margin:0;font-size:1.1rem}
 .price{font-family:system-ui,sans-serif;font-weight:700;white-space:nowrap}
@@ -214,6 +296,7 @@ q.addEventListener('input',function(){
   });
   document.getElementById('none').style.display=any?'none':'block';
 });
+document.querySelectorAll('.item img').forEach(function(i){i.addEventListener('click',function(){i.classList.toggle('big')})});
 <\/script></body></html>`;
 }
 
@@ -236,8 +319,8 @@ $('open').onclick = () => {
   window.open(u, '_blank');
 };
 $('toggle').onclick = () => { $('editor').hidden = !$('editor').hidden; };
-$('apply').onclick = () => {
-  try { data = JSON.parse($('json').value); show(); say('Changes applied.'); }
+$('apply').onclick = async () => {
+  try { data = JSON.parse($('json').value); if ($('usePhotos').checked) await cropAll(); else imgs = {}; show(); say('Changes applied.'); }
   catch (e) { say('The data is not valid JSON: ' + e.message, true); }
 };
 </script>
