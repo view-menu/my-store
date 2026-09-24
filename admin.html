@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Menu admin</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="pdf.min.js"></script>
+<script src="pdf.worker.min.js"></script>
+<style>
+:root{
+  --bg:#F3F5F2; --paper:#FFFFFF; --ink:#16302B; --muted:#5B6E69; --line:#D5DDD9;
+  --accent:#2F6B4F; --accent-ink:#FFFFFF; --warn:#A23B2A;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101816; --paper:#17221F; --ink:#E4EEEA; --muted:#94A8A2; --line:#2B3B37;
+    --accent:#6FBF95; --accent-ink:#0D1A15; --warn:#F08A76;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101816; --paper:#17221F; --ink:#E4EEEA; --muted:#94A8A2; --line:#2B3B37;
+  --accent:#6FBF95; --accent-ink:#0D1A15; --warn:#F08A76;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+main{max-width:720px;margin:0 auto;padding:32px 20px 64px}
+h1{font-size:clamp(2rem,7vw,3.2rem);font-weight:800;line-height:1.02;letter-spacing:-.02em;margin:0 0 12px}
+.lede{color:var(--muted);margin:0 0 28px;max-width:52ch}
+.drop{display:block;border:2px dashed var(--line);border-radius:18px;background:var(--paper);
+  padding:36px 20px;text-align:center;cursor:pointer;transition:border-color .15s}
+.drop:hover,.drop.over{border-color:var(--accent)}
+.drop strong{display:block;font-size:1.15rem}
+.drop span{color:var(--muted);font-size:.95rem}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.drop:focus-within{outline:3px solid var(--accent);outline-offset:3px}
+.fields{display:grid;gap:14px;margin:22px 0}
+label.f{display:grid;gap:6px;font-weight:600;font-size:.95rem}
+input[type=text],select{font:inherit;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--paper);color:var(--ink);width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+button{font:inherit;font-weight:600;border:0;border-radius:999px;padding:12px 22px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.status{min-height:1.5em;color:var(--muted);margin:14px 0}
+.status.err{color:var(--warn)}
+.bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;display:none}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.preview{margin-top:26px;display:none}
+.preview iframe{width:100%;height:70vh;border:1px solid var(--line);border-radius:14px;background:#fff}
+.note{font-size:.9rem;color:var(--muted);margin-top:10px}
+details.settings{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 22px}
+details.settings summary{cursor:pointer;font-weight:600}
+details.settings .fields{margin:14px 0 4px}
+.check{display:flex;gap:8px;align-items:center;font-size:.95rem}
+.hint{font-size:.85rem;color:var(--muted);font-weight:400}
+.hint a{color:var(--accent)}
+.live{margin-top:10px;font-weight:600}
+.live a{color:var(--accent);word-break:break-all}
+</style>
+</head>
+<body>
+<main>
+  <h1>Menu admin</h1>
+  <p class="lede">Upload the menu PDF, check the preview, then publish. Customers see the new menu at your menu link, and it keeps working on their phones without internet.</p>
+
+  <details class="settings" id="settings">
+    <summary id="settingsSummary">Website connection</summary>
+    <div class="fields">
+      <label class="f">GitHub username or organization
+        <input type="text" id="ghOwner" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="f">Repository name
+        <input type="text" id="ghRepo" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="f">Branch
+        <input type="text" id="ghBranch" value="main" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="f">Access token
+        <input type="password" id="ghToken" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
+        <span class="hint">Create it at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → Fine-grained tokens</a>. Choose only this repository and set <em>Contents</em> to <em>Read and write</em>. Only people with this token can change the menu.</span>
+      </label>
+      <label class="check"><input type="checkbox" id="ghRemember"> Remember on this device</label>
+    </div>
+  </details>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="application/pdf">
+    <strong id="dropTitle">Choose a PDF or drop it here</strong>
+    <span id="dropSub">The PDF is converted on this device.</span>
+  </label>
+
+  <div class="fields">
+    <label class="f">Restaurant name (shown as the page title)
+      <input type="text" id="name" placeholder="e.g. Trattoria Sole">
+    </label>
+    <label class="f">Photo quality
+      <select id="quality">
+        <option value="1.6|0.78">Light – smaller file, quick to load</option>
+        <option value="2.2|0.85" selected>Standard – sharp on phones</option>
+        <option value="3|0.9">High – best for tablets and zoom</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="row">
+    <button class="primary" id="convert" disabled>Convert to HTML</button>
+    <button class="primary" id="publish" disabled>Publish to customers</button>
+    <button class="ghost" id="download" disabled>Download copy</button>
+  </div>
+  <div class="status" id="status" role="status"></div>
+  <div class="bar" id="bar"><i></i></div>
+  <p class="live" id="live"></p>
+
+  <section class="preview" id="preview">
+    <iframe id="frame" title="Menu preview"></iframe>
+    <p class="note">This is exactly what customers will see. "Download copy" saves the same menu as a file for a tablet or USB stick.</p>
+  </section>
+</main>
+
+<script>
+(function(){
+  var fileInput=document.getElementById('file'), drop=document.getElementById('drop');
+  var convertBtn=document.getElementById('convert'), dlBtn=document.getElementById('download');
+  var statusEl=document.getElementById('status'), bar=document.getElementById('bar');
+  var preview=document.getElementById('preview'), frame=document.getElementById('frame');
+  var pdfFile=null, outputHtml=null;
+  var pubBtn=document.getElementById('publish'), live=document.getElementById('live');
+  var F={owner:'ghOwner',repo:'ghRepo',branch:'ghBranch',token:'ghToken'};
+  function el(k){return document.getElementById(F[k]);}
+  function cfg(){return {owner:el('owner').value.trim(),repo:el('repo').value.trim(),branch:el('branch').value.trim()||'main',token:el('token').value.trim()};}
+  function siteUrl(c){
+    var host=c.owner.toLowerCase()+'.github.io';
+    return 'https://'+host+'/'+(c.repo.toLowerCase()===host?'':c.repo+'/');
+  }
+  (function loadSettings(){
+    var saved=null; try{saved=JSON.parse(localStorage.getItem('menuAdmin')||'null');}catch(e){}
+    if(saved){Object.keys(F).forEach(function(k){if(saved[k])el(k).value=saved[k];});document.getElementById('ghRemember').checked=true;}
+    else if(/\.github\.io$/i.test(location.hostname)){
+      el('owner').value=location.hostname.split('.')[0];
+      var seg=location.pathname.split('/').filter(Boolean)[0];
+      el('repo').value=(seg&&!/\.html$/i.test(seg))?seg:location.hostname;
+    }
+    var c=cfg(); if(!c.token)document.getElementById('settings').open=true;
+    if(c.owner&&c.repo)live.innerHTML='Customer link: <a href="'+siteUrl(c)+'" target="_blank" rel="noopener">'+siteUrl(c)+'</a>';
+  })();
+  function saveSettings(){
+    try{
+      if(document.getElementById('ghRemember').checked)localStorage.setItem('menuAdmin',JSON.stringify(cfg()));
+      else localStorage.removeItem('menuAdmin');
+    }catch(e){}
+  }
+  document.getElementById('ghRemember').addEventListener('change',saveSettings);
+
+  function toB64(str){
+    var bytes=new TextEncoder().encode(str), out='', CH=0x8000;
+    for(var i=0;i<bytes.length;i+=CH)out+=String.fromCharCode.apply(null,bytes.subarray(i,i+CH));
+    return btoa(out);
+  }
+  async function gh(c,method,path,body){
+    var r=await fetch('https://api.github.com/repos/'+encodeURIComponent(c.owner)+'/'+encodeURIComponent(c.repo)+path,{
+      method:method,
+      headers:{'Authorization':'Bearer '+c.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},
+      body:body?JSON.stringify(body):undefined
+    });
+    var data=null; try{data=await r.json();}catch(e){}
+    if(!r.ok){var err=new Error((data&&data.message)||('HTTP '+r.status));err.status=r.status;throw err;}
+    return data;
+  }
+  async function putFile(c,name,content,message,shas){
+    var body={message:message,content:toB64(content),branch:c.branch};
+    if(shas[name])body.sha=shas[name];
+    await gh(c,'PUT','/contents/'+name,body);
+  }
+  pubBtn.addEventListener('click',async function(){
+    if(!outputHtml)return;
+    var c=cfg();
+    if(!c.owner||!c.repo||!c.token){document.getElementById('settings').open=true;setStatus('Fill in the website connection first.',true);return;}
+    saveSettings();
+    pubBtn.disabled=true; convertBtn.disabled=true;
+    try{
+      setStatus('Publishing…');
+      var list=await gh(c,'GET','/contents/?ref='+encodeURIComponent(c.branch));
+      var shas={}; (list||[]).forEach(function(f){shas[f.name]=f.sha;});
+      var title=document.getElementById('name').value.trim()||'Menu';
+      var stamp=new Date().toLocaleString();
+      await putFile(c,'index.html',outputHtml,'Update menu ('+stamp+')',shas);
+      var manifest=JSON.stringify({name:title,short_name:title.slice(0,12),start_url:'./',scope:'./',display:'standalone',
+        background_color:'#1b1b1b',theme_color:'#1b1b1b',icons:[{src:'icon.svg',sizes:'any',type:'image/svg+xml',purpose:'any'}]},null,2);
+      await putFile(c,'manifest.webmanifest',manifest,'Update menu name',shas);
+      var url=siteUrl(c);
+      setStatus('Published. Customers will see the new menu in about 1–2 minutes.');
+      live.innerHTML='Customer link: <a href="'+url+'" target="_blank" rel="noopener">'+url+'</a>';
+      document.getElementById('settings').open=false;
+    }catch(e){
+      var m=e.status===401?'The access token is wrong or expired. Create a new one and paste it in Website connection.'
+        :e.status===403?'The token cannot change this repository. Give it Contents: Read and write for this repository.'
+        :e.status===404?'Repository or branch not found. Check the username, repository name and branch.'
+        :e.status===409||e.status===422?'Someone else changed the menu at the same moment. Click Publish again.'
+        :'Publishing failed: '+e.message+'. Check your internet connection and try again.';
+      document.getElementById('settings').open=(e.status===401||e.status===403||e.status===404);
+      setStatus(m,true);
+    }finally{pubBtn.disabled=false; convertBtn.disabled=false;}
+  });
+
+  if(window.pdfjsLib){
+    pdfjsLib.GlobalWorkerOptions.workerSrc='pdf.worker.min.js';
+  }
+
+  function setStatus(msg,err){statusEl.textContent=msg;statusEl.className='status'+(err?' err':'');}
+  function setProgress(p){bar.style.display=p==null?'none':'block';bar.firstElementChild.style.width=((p||0)*100)+'%';}
+
+  function pick(f){
+    if(!f)return;
+    if(f.type!=='application/pdf' && !/\.pdf$/i.test(f.name)){setStatus('That file is not a PDF. Choose a .pdf file.',true);return;}
+    pdfFile=f; outputHtml=null; dlBtn.disabled=true; pubBtn.disabled=true;
+    document.getElementById('dropTitle').textContent=f.name;
+    document.getElementById('dropSub').textContent=(f.size/1048576).toFixed(1)+' MB · tap to choose another';
+    var nameEl=document.getElementById('name');
+    if(!nameEl.value) nameEl.value=f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ');
+    convertBtn.disabled=false; setStatus('');
+  }
+  fileInput.addEventListener('change',function(){pick(fileInput.files[0]);});
+  ['dragenter','dragover'].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.add('over');});});
+  ['dragleave','drop'].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.remove('over');});});
+  drop.addEventListener('drop',function(ev){pick(ev.dataTransfer.files[0]);});
+
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+  function buildHtml(title,pages){
+    var nav='';
+    if(pages.length>1){
+      nav='<nav>'+pages.map(function(_,i){return '<a href="#p'+(i+1)+'">'+(i+1)+'</a>';}).join('')+'</nav>';
+    }
+    var body=pages.map(function(p,i){
+      return '<section id="p'+(i+1)+'" class="pg"><img src="'+p.img+'" width="'+p.w+'" height="'+p.h+'" alt="'+esc(title)+' menu page '+(i+1)+'"'+(i>0?' loading="lazy"':'')+'>'+
+        (p.text?'<div class="txt">'+esc(p.text)+'</div>':'')+'</section>';
+    }).join('\n');
+    return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'+
+      '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'+
+      '<meta name="color-scheme" content="light dark">\n'+
+      '<title>'+esc(title)+'</title>\n<link rel="manifest" href="manifest.webmanifest">\n<meta name="theme-color" content="#1b1b1b">\n<link rel="apple-touch-icon" href="icon.svg">\n<meta name="apple-mobile-web-app-capable" content="yes">\n<style>\n'+
+      'html,body{margin:0;background:#1b1b1b}body{font-family:system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}'+
+      'header{position:sticky;top:0;z-index:2;background:rgba(20,20,20,.92);color:#fff;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));margin-top:calc(-1 * env(safe-area-inset-top,0px));display:flex;align-items:center;gap:12px;flex-wrap:wrap}'+
+      'h1{font-size:1.05rem;margin:0;font-weight:600}nav{display:flex;gap:6px;overflow-x:auto;margin-left:auto}'+
+      'nav a{color:#fff;text-decoration:none;border:1px solid #555;border-radius:999px;min-width:34px;text-align:center;padding:4px 10px;font-size:.9rem}'+
+      'main{max-width:900px;margin:0 auto;padding:10px 0 30px}.pg{margin:0 0 10px;scroll-margin-top:60px}'+
+      '.pg img{display:block;width:100%;height:auto;background:#fff}'+
+      '.txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:pre-wrap}'+
+      '\n</style>\n</head>\n<body>\n<header><h1>'+esc(title)+'</h1>'+nav+'</header>\n<main>\n'+body+'\n</main>\n<script>if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(function(){});}<\/script>\n</body>\n</html>\n';
+  }
+
+  convertBtn.addEventListener('click',async function(){
+    if(!pdfFile)return;
+    if(!window.pdfjsLib){setStatus('The PDF reader did not load. Make sure pdf.min.js and pdf.worker.min.js are in the same folder as index.html.',true);return;}
+    var q=document.getElementById('quality').value.split('|'), scale=+q[0], jpg=+q[1];
+    var title=document.getElementById('name').value.trim()||'Menu';
+    convertBtn.disabled=true; dlBtn.disabled=true; pubBtn.disabled=true; setProgress(0);
+    try{
+      setStatus('Reading PDF…');
+      var buf=await pdfFile.arrayBuffer();
+      var pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      var pages=[];
+      for(var i=1;i<=pdf.numPages;i++){
+        setStatus('Converting page '+i+' of '+pdf.numPages+'…');
+        var page=await pdf.getPage(i);
+        var vp=page.getViewport({scale:scale});
+        var c=document.createElement('canvas');
+        c.width=Math.round(vp.width); c.height=Math.round(vp.height);
+        var ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);
+        await page.render({canvasContext:ctx,viewport:vp}).promise;
+        var text='';
+        try{var tc=await page.getTextContent();text=tc.items.map(function(t){return t.str+(t.hasEOL?'\n':' ');}).join('').replace(/[ \t]+/g,' ').trim();}catch(e){}
+        pages.push({img:c.toDataURL('image/jpeg',jpg),w:c.width,h:c.height,text:text});
+        c.width=c.height=0;
+        setProgress(i/pdf.numPages);
+      }
+      outputHtml=buildHtml(title,pages);
+      frame.srcdoc=outputHtml; preview.style.display='block';
+      var mb=(new Blob([outputHtml]).size/1048576).toFixed(1);
+      setStatus('Done: '+pdf.numPages+' page'+(pdf.numPages>1?'s':'')+', '+mb+' MB. Check the preview, then publish.');
+      dlBtn.disabled=false; pubBtn.disabled=false;
+    }catch(e){
+      console.error(e);
+      setStatus('This PDF could not be converted. If it is password-protected, save an unlocked copy and try again.',true);
+    }finally{convertBtn.disabled=false; setProgress(null);}
+  });
+
+  function slug(s){return (s||'menu').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'menu';}
+
+  dlBtn.addEventListener('click',async function(){
+    if(!outputHtml)return;
+    var filename='menu.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([outputHtml],{type:'text/html'}));
+    a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    setStatus('Saved '+filename+'.');
+  });
+})();
+</script>
+</body>
+</html>
